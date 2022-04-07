@@ -12,7 +12,7 @@ const cover = document.getElementById('cover');
 // const durTime = document.querySelector('#durTime');
 //https://codepen.io/tiger2380/pen/yOvvWo
 //http-server /Users/kennethtrinh/Desktop/Music-Player -c-1
-//https://github.com/olvb/phaze/blob/master/www/main.js --> TODO
+//https://github.com/olvb/phaze/blob/master/www/main.js --> TODO: make quality better
 
 
 function Song(id, name, path) {
@@ -154,7 +154,7 @@ function draw(data){
     for (var i =0; i < data.length; i++){
         ctx.fillStyle = 'purple';
         // ctx.fillRect(10,10,50,20);
-        ctx.fillRect(i, canvas.height, 1, -50000* Math.pow(10, data[data.length-i-1]/20) );
+        ctx.fillRect(i, canvas.height, 1, -50000* Math.pow(10, data[i]/20) );
 
     }
 }
