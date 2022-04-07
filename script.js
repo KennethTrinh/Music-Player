@@ -158,8 +158,7 @@ function draw(data){
 
     }
 }
-// Time of song
-// audio.addEventListener('timeupdate',durTime);
+
 
 
 
