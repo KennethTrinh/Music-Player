@@ -8,7 +8,7 @@
 body {
   background-image: linear-gradient(
     0deg,
-    #8A2BE2,
+    #FF69B4,
     #FFB6C1
   );
   height: 100vh;
@@ -183,14 +183,14 @@ body {
   appearance: none;
   width: 25px; /* Set a specific slider handle width */
   height: 25px; /* Slider handle height */
-  background: #04AA6D; /* Green background */
+  background: #8F00FF; /* Green background */
   cursor: pointer; /* Cursor on hover */
 }
 
 .slider::-moz-range-thumb {
   width: 25px; /* Set a specific slider handle width */
   height: 25px; /* Slider handle height */
-  background: #04AA6D; /* Green background */
+  background: #8F00FF; /* Green background */
   cursor: pointer; /* Cursor on hover */
 }
 

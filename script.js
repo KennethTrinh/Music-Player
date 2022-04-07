@@ -12,6 +12,7 @@ const cover = document.getElementById('cover');
 // const durTime = document.querySelector('#durTime');
 //https://codepen.io/tiger2380/pen/yOvvWo
 //http-server /Users/kennethtrinh/Desktop/Music-Player -c-1
+//https://github.com/olvb/phaze/blob/master/www/main.js --> TODO
 
 
 function Song(id, name, path) {
@@ -21,9 +22,9 @@ function Song(id, name, path) {
 }
 
 var playlist = [
-    new Song(0, 'Juice WRLD Ft Benny Blanco - Real Shit', `music/Juice WRLD Ft Benny Blanco - Real Shit.mp3`),
-    new Song(1, 'Lil Baby, Lil Durk ft Rodwave - Rich Off Pain', `music/Lil Baby, Lil Durk ft Rodwave - Rich Off Pain.mp3`),
-    new Song(2, 'Polo G – I Know', `music/Polo G – I Know.mp3`)
+    new Song(0, 'Halsey - Without Me', `music/Halsey - Without Me.mp3`),
+    new Song(1, 'Taylor Swift - Red', `music/Taylor Swift - Red.mp3`),
+    new Song(2, 'The Chainsmokers, Bebe Rexha - Call You Mine', `music/The Chainsmokers, Bebe Rexha - Call You Mine.mp3`)
 ];
 
 let songIndex = 2;
@@ -151,7 +152,7 @@ function draw(data){
     // console.log(data);
     ctx.clearRect(0,0, canvas.width, canvas.height);
     for (var i =0; i < data.length; i++){
-        ctx.fillStyle = 'teal';
+        ctx.fillStyle = 'purple';
         // ctx.fillRect(10,10,50,20);
         ctx.fillRect(i, canvas.height, 1, -50000* Math.pow(10, data[data.length-i-1]/20) );
 
