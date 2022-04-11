@@ -39,7 +39,7 @@ function init(){
         $('.playlist').append(`<div class=playlist-row id=${playlist[i].id} onclick="nav(this.id)"> ${playlist[i].name} </div>`);
 
     title.innerText = playlist[songIndex].name;
-    player = new Tone.Player(playlist[songIndex].path).sync().start(0);
+    player = new Tone.Player(playlist[songIndex].path, ()=>{$(".action-btn").addClass('enabled'); }).sync().start(0);
     // player.sync().start(0);
     //polled every second -> updates progress bar and goes to next song when finished
     loop = new Tone.Loop( (time) => {
@@ -57,10 +57,11 @@ function loadSong() {
   title.innerText = playlist[songIndex].name;
   // audio.src = `music/${song}.mp3`;
   // player.load(`music/${song}.mp3`);
+  $(".action-btn").removeClass('enabled');
   var wasPlaying = player.state == "started";
   Tone.Transport.stop();
   player.load(playlist[songIndex].path).then(
-      (value) => {  if (wasPlaying) playSong(); else pauseSong(); },
+      (value) => {  if (wasPlaying) playSong(); else pauseSong(); $(".action-btn").addClass('enabled'); },
       (error) => { console.log("error"); }
   );
 
