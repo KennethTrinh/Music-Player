@@ -219,6 +219,7 @@ function draw(data){
 //   console.log(Tone.Transport.seconds);
 // });
 // document.getElementById("__drop").style.display = "none";
+var mysong;
 var audioContext = new AudioContext();
 function initAudio(data) {
     var audioRequest = new XMLHttpRequest();
@@ -242,28 +243,12 @@ $(document).on('dragover', function(){
   return false;
 });
 
-var buff;
+
 $(document).on('drop', function(e){
   e.stopPropagation();
   e.preventDefault();
   data = e.originalEvent.dataTransfer;
-  file = data.files[0];
-  var file_name = file.name.substring(0, file.name.length - 4);
-
-  $.when(initAudio(data)).done(function (b) {
-      buff=b;
-
-      $('.playlist').append(`<div class=playlist-row id=${playlist.length} onclick="nav(this.id)"> ${file_name} </div>`);
-      playlist.push(new Song(playlist.length, file_name, URL.createObjectURL(file)));
-      // player.load(URL.createObjectURL(file)).then(
-      //     (value) => {console.log('success'); },
-      //     (error) => { console.log("error"); }
-      // );
-      // clearCanvas();
-      // setupBars(b);
-      // $('#music_title').html(file_name);
-      //     $('#audio')[0].src = URL.createObjectURL(file);
-  });
+  extract(data);
 
   $('#__drop').removeClass('show').addClass('hidden');
 });
@@ -273,7 +258,14 @@ $('#__drop .show').on('dragleave', function(){
   $('#__drop').removeClass('show').addClass('hidden');
 });
 
-
+function extract(data){
+    file = data.files[0];
+    var file_name = file.name.substring(0, file.name.length - 4);
+    $.when(initAudio(data)).done(function (b) {
+        $('.playlist').append(`<div class=playlist-row id=${playlist.length} onclick="nav(this.id)"> ${file_name} </div>`);
+        playlist.push(new Song(playlist.length, file_name, URL.createObjectURL(file)));
+    });
+}
 
 
 
