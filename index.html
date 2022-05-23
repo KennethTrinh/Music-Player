@@ -1,60 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <!-- <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"> -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.2/css/all.min.css"
-    />
-    <link rel="stylesheet" href="style.css" />
-    <title>Music Player</title>
-  </head>
-  <body>
-    <h1>Music Player</h1>
-
-    <div class="music-container" id="music-container">
-      <div class="music-info">
-        <h4 id="title"></h4>
-        <div class="progress-container" id="progress-container">
-          <div class="progress" id="progress"></div>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Phaze - A real-time web audio pitch-shifte</title>
+    <link rel="stylesheet" type="text/css" href="./style.css" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <script src="./main.js"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/all.js" integrity="sha384-xymdQtn1n3lH2wcu0qhcdaOpQwyoarkgLVxC/wZ5q7h9gHtxICrpcaSUfygqZGOe" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="wrapper">
+        <h1>Phaze: a real-time web audio pitch-shifter</h1>
+        <div id="no-worklet" style="display: none;">Audio Worklet API not supported by you browser, try a recent Chrome version.</div>
+        <div class="timeline" id="timeline"></div>
+        <div class="controls">
+            <button id="play-pause" data-playing="false" role="switch" aria-checked="false">
+                <span class="play" style="font-size: 2em;"><i class="fas fa-play-circle"></i></span>
+                <span class="pause" style="font-size: 2em; display: none;"><i class="fas fa-pause-circle"></i></span>
+            </button>
+            <label for="speed">
+                <span>Speed</span>
+                <input id="speed" type="range" min="0.5" max="1.5" step="0.01" />
+                <span id="speed-value">1.00</span>
+            </label>
+            <label for="pitch">
+                <span>Pitch</span>
+                <input id="pitch" type="range" min="0.5" max="2" step="0.01" />
+                <span id="pitch-value">1.00</span>
+            </label>
         </div>
-      </div>
-
-
-      <div class="img-container">
-        <img src="images/The Chainsmokers, Bebe Rexha - Call You Mine.jpg" alt="music-cover" id="cover" />
-      </div>
-      <div class="navigation">
-        <button id="prev" class="action-btn">
-          <i class="fas fa-backward"></i>
-        </button>
-        <button id="play" class="action-btn action-btn-big">
-          <i class="fas fa-play"></i>
-        </button>
-        <button id="next" class="action-btn">
-          <i class="fas fa-forward"></i>
-        </button>
-      </div>
     </div>
-    <div class="playlist"> <strong style="color:purple;"> My Hopeless Romantic Playlist </strong> </div>
-    <div><canvas id="fft" width="1024" height="250"></canvas></div>
-    <!-- <button id="button">Click me to play note!</button>
-    <button id="button2">Seek</button> -->
-    <div class="slidecontainer"> <input type="range" min="-12" max="12" value="0" class="slider" id="myRange">
-    <p>Semitones: <span id="demo"></span></p></div>
-    <input type="file" accept=".mp3,audio/*" onchange="extract(this)">
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <!-- <script src="https://unpkg.com/tone"></script> -->
-    <!-- <script type="text/javascript" src="https://tonejs.github.io/build/Tone.min.js"></script> -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.9/Tone.js" integrity="sha512-nUjml8mN4CNYqBAy0ndDrd8pJV/eTtBNDsnvNtPqozx9/BccUeWSoKW14qWkQUnhuh8E3m+yra3qdzM68lqPEQ==" crossorigin="anonymous"></script>
-    <script src="script.js"></script>
-    <!-- <script src="p5/p5.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/p5@1.4.1/lib/p5.min.js"></script>
-	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/p5@1.4.1/lib/addons/p5.sound.min.js"></script> -->
-  </body>
-  <div id="__drop" class="hidden"></div>
-
+</body>
 </html>
