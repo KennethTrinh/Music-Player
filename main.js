@@ -20457,15 +20457,14 @@ async function init() {
         return;
     }
     const buffer = await loader.load('./test.mp3');
-    let [playerEngine, phaseVocoderNode] = await setupEngine(buffer);
+    let [playerEngine, phaseVocoderNode, analyser] = await setupEngine(buffer);
     let playControl = new wavesAudio.PlayControl(playerEngine);
     playControl.setLoopBoundaries(0, buffer.duration);
     playControl.loop = true;
-
     setupPlayPauseButton(playControl);
     setupSpeedSlider(playControl, phaseVocoderNode);
     setupPitchSlider(phaseVocoderNode);
-    setupTimeline(buffer, playControl);
+    setupTimeline(buffer, playControl, analyser);
 }
 
 function handleNoWorklet() {
@@ -20484,10 +20483,12 @@ async function setupEngine(buffer) {
 
     await audioContext.audioWorklet.addModule('phase-vocoder.js');
     let phaseVocoderNode = new AudioWorkletNode(audioContext, 'phase-vocoder-processor');
+    let analyser = audioContext.createAnalyser();
     playerEngine.connect(phaseVocoderNode);
-    phaseVocoderNode.connect(audioContext.destination);
+    phaseVocoderNode.connect(analyser);
+    analyser.connect(audioContext.destination);
 
-    return [playerEngine, phaseVocoderNode];
+    return [playerEngine, phaseVocoderNode, analyser];
 }
 
 function setupPlayPauseButton(playControl) {
@@ -20536,7 +20537,8 @@ function setupPitchSlider(phaseVocoderNode) {
     }, false);
 }
 
-function setupTimeline(buffer, playControl) {
+
+function setupTimeline(buffer, playControl, analyser) {
     let $timeline = document.querySelector('#timeline');
 
     const width = $timeline.getBoundingClientRect().width;
@@ -20546,6 +20548,13 @@ function setupTimeline(buffer, playControl) {
 
     let timeline = new wavesUI.core.Timeline(pixelsPerSecond, width);
     timeline.createTrack($timeline, height, 'main');
+
+    var audioCtx = new AudioContext();
+    var myArrayBuffer = audioCtx.createBuffer(1, buffer.length, buffer.sampleRate);
+    // var anotherArray = new Float32Array;
+    myArrayBuffer.copyToChannel(buffer.getChannelData(0), 0);
+    console.log(myArrayBuffer);
+
     let waveformLayer = new wavesUI.helpers.WaveformLayer(buffer, {
         height: height
     });
@@ -20570,15 +20579,30 @@ function setupTimeline(buffer, playControl) {
     timeline.tracks.render();
     timeline.tracks.update();
 
+    $timeline.addEventListener('mousedown', (e) => {
+        const rect = $timeline.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const y = e.clientY - rect.top
+        console.log("x: " + x + " y: " + y);
+        playControl.seek(x / rect.width * duration);
+    });
+
     // cursor animation loop
     (function loop() {
         cursorData.position = playControl.currentPosition;
         timeline.tracks.update(cursorLayer);
+
+        // console.log(playControl.currentPosition );
+        var array = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(array);
+        // console.log(array);
 
         requestAnimationFrame(loop);
     }());
 }
 
 window.addEventListener('load', init);
+
+
 
 },{"waves-audio":148,"waves-loaders":153,"waves-ui":218}]},{},[331]);
