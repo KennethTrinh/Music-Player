@@ -27,6 +27,14 @@ body {
 }
 
 .controls #play-pause {
+    /* margin-right: auto; */
+}
+
+.controls #backward {
+    /* margin-right: auto; */
+}
+
+.controls #forward {
     margin-right: auto;
 }
 
@@ -43,4 +51,19 @@ body {
     text-align: center;
     font-size: 1.1em;
     font-weight: bold;
+}
+
+.playlist {
+    position:absolute;
+    top:0;
+    left:0;
+    z-index:1;
+    .playlist-row{
+        display: block;
+        margin: 10px 0;
+        width: 100%;
+    }
+}
+.playlist-row:hover {
+      text-decoration: underline;
 }
