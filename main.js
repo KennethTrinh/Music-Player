@@ -20488,7 +20488,7 @@ async function loadSong(initial){
     $playButton.classList.add('disabled');
     $forwardButton.classList.add('disabled');
     $backwardButton.classList.add('disabled');
-
+    $("h1").text( playlist[songIndex].name )
     if (audioContext.audioWorklet === undefined) {
         handleNoWorklet();
         return;
@@ -20498,12 +20498,27 @@ async function loadSong(initial){
         playControl.stop();
 
     stop(); //stop the previous animation loop
+
+    //load the audio
     buffer = await loader.load( playlist[songIndex].path );
     [playerEngine, phaseVocoderNode, analyser] = await setupEngine(buffer);
     playControl = new wavesAudio.PlayControl(playerEngine);
     playControl.setLoopBoundaries(0, buffer.duration);
     playControl.loop = false;
+
+    //setting up pitch slider
+    let oldPitch, oldSpeed;
+    if (!initial){
+        oldPitch = $pitchvalueLabel.innerHTML
+        oldSpeed = $valueLabel.innerHTML;
+    }
     pitchFactorParam = phaseVocoderNode.parameters.get('pitchFactor');
+    if (!initial){
+        playControl.speed = oldSpeed;
+        pitchFactorParam.value = parseFloat(oldPitch) * 1 / parseFloat(oldSpeed);
+    }
+
+    //setup timeline
     if (initial)
         setupTimeline(buffer, playControl, analyser);
     else
@@ -20598,13 +20613,13 @@ $speedSlider.addEventListener('input', function() {
 let $pitchSlider = document.querySelector('#pitch');
 let $pitchvalueLabel = document.querySelector('#pitch-value');
 $pitchSlider.addEventListener('input', function() {
-    pitchFactor = parseFloat(this.value);
+    pitchFactor = Math.pow(2, parseFloat(this.value)/12);
     pitchFactorParam.value = pitchFactor * 1 / speedFactor;
     $pitchvalueLabel.innerHTML = pitchFactor.toFixed(2);
 }, false);
 
 
-let  duration;
+let duration;
 const height = 200;
 
 let $timeline = document.querySelector('#timeline');
@@ -20648,9 +20663,9 @@ function loop() {
                     capYPositionArray = [],////store the vertical position of hte caps for the preivous frame
                     ctx = canvas.getContext('2d'),
                     gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                gradient.addColorStop(1, '#0f0');
-                gradient.addColorStop(0.5, '#ff0');
-                gradient.addColorStop(0, '#f00');
+                gradient.addColorStop(1, '#FF0099');
+                gradient.addColorStop(0.5, '#FF00FF');
+                gradient.addColorStop(0, '#FF99FF');
     var step = Math.round(array.length / meterNum); //sample limited data from the total array
                     ctx.clearRect(0, 0, cwidth, cheight);
                     for (var i = 0; i < meterNum; i++) {
@@ -20736,6 +20751,37 @@ function updateTimeline(buffer, playControl, analyser) {
     timeline.tracks.render();
     timeline.tracks.update();
     start()
+}
+
+
+function initAudio(data) {
+    let audioContext = new AudioContext();
+    var audioRequest = new XMLHttpRequest();
+    var dfd = jQuery.Deferred();
+
+    audioRequest.open("GET", URL.createObjectURL(data.files[0]), true);
+    audioRequest.responseType = "arraybuffer";
+    audioRequest.onload = function () {
+        audioContext.decodeAudioData(audioRequest.response,
+                function (buffer) {
+                    dfd.resolve(buffer);
+                });
+    }
+    audioRequest.send();
+    return dfd.promise();
+}
+
+window.extract = function (data){
+    var file = data.files[0];
+    var file_name = file.name.substring(0, file.name.length - 4);
+    $.when(initAudio(data)).done(function (b) {
+        $('.playlist').append(`<div class=playlist-row id=${playlist.length} onclick="nav(this.id)"> ${file_name} </div>`);
+        playlist.push(new Song(playlist.length, file_name, URL.createObjectURL(file)));
+    });
+}
+window.nav = function (id){
+    songIndex = id;
+    loadSong(false);
 }
 
 window.addEventListener('load', init);

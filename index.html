@@ -38,11 +38,14 @@
             </label>
             <label for="pitch">
                 <span>Pitch</span>
-                <input id="pitch" type="range" min="0.5" max="2" step="0.01" />
+                <input id="pitch" type="range" min="-12" max="12" step="1" />
                 <span id="pitch-value">1.00</span>
             </label>
         </div>
+        <input type="file" accept=".mp3,audio/*" onchange="extract(this)">
     </div>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="./main.js"></script>
 </body>
-<script src="./main.js"></script>
+
 </html>

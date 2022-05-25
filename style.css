@@ -52,6 +52,9 @@ body {
   pointer-events: none;
 }
 
+input[type="range"] {
+  width:250px;
+}
 
 #no-worklet {
     text-align: center;
