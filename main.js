@@ -20463,7 +20463,7 @@ var playlist = [
     new Song(2, 'The Chainsmokers, Bebe Rexha - Call You Mine', `music/The Chainsmokers, Bebe Rexha - Call You Mine.mp3`)
 ];
 
-let songIndex = 2;
+let songIndex = 1;
 var playControl, buffer, playerEngine, phaseVocoderNode,
 analyser, timeline, pitchFactorParam;
 
@@ -20475,32 +20475,47 @@ async function init() {
         div2.id = playlist[i].id;
         div2.onclick = async function () {
                         songIndex = this.id;
-                        playControl.stop();
-                        [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong();
-                        updateTimeline(buffer, playControl, analyser);
+                        [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong(false);
                         };
         div2.innerHTML = playlist[i].name;
         Playlist.appendChild(div2);
     }
-    let [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong();
-
-    setupTimeline(buffer, playControl, analyser);
+    let [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong(true);
 
 }
 
-async function loadSong(){
+async function loadSong(initial){
+    $playButton.classList.add('disabled');
+    $forwardButton.classList.add('disabled');
+    $backwardButton.classList.add('disabled');
+
     if (audioContext.audioWorklet === undefined) {
         handleNoWorklet();
         return;
     }
+    let wasPlaying = $playButton.dataset.playing;
+    if (playControl)
+        playControl.stop();
+
+    stop(); //stop the previous animation loop
     buffer = await loader.load( playlist[songIndex].path );
     [playerEngine, phaseVocoderNode, analyser] = await setupEngine(buffer);
     playControl = new wavesAudio.PlayControl(playerEngine);
     playControl.setLoopBoundaries(0, buffer.duration);
     playControl.loop = false;
-    setupPlayPauseButton(playControl);
     pitchFactorParam = phaseVocoderNode.parameters.get('pitchFactor');
-    stop();
+    if (initial)
+        setupTimeline(buffer, playControl, analyser);
+    else
+        updateTimeline(buffer, playControl, analyser);
+
+    if (wasPlaying == 'true')
+        playControl.start();
+
+    $playButton.classList.remove('disabled');
+    $forwardButton.classList.remove('disabled');
+    $backwardButton.classList.remove('disabled');
+
     return [buffer, playControl, playerEngine, phaseVocoderNode, analyser];
 }
 
@@ -20519,8 +20534,8 @@ async function setupEngine(buffer) {
     playerEngine.cyclic = false;
 
     await audioContext.audioWorklet.addModule('phase-vocoder.js');
-     phaseVocoderNode = new AudioWorkletNode(audioContext, 'phase-vocoder-processor');
-     analyser = audioContext.createAnalyser();
+    phaseVocoderNode = new AudioWorkletNode(audioContext, 'phase-vocoder-processor');
+    analyser = audioContext.createAnalyser();
     playerEngine.connect(phaseVocoderNode);
     phaseVocoderNode.connect(analyser);
     analyser.connect(audioContext.destination);
@@ -20528,39 +20543,45 @@ async function setupEngine(buffer) {
     return [playerEngine, phaseVocoderNode, analyser];
 }
 
-function setupForwardBackward(playControl){
-    let $forwardButton = document.querySelector('#forward');
-    let $backwardButton = document.querySelector('#backward');
-    let $playButton = document.querySelector('#play-pause');
-    $forwardButton.addEventListener('click', ()=>{
-        console.log($playButton.dataset.playing);
-    });
-    $backwardButton.addEventListener('click', ()=>{
-        console.log($playButton.dataset.playing);
-    });
 
-}
+let $forwardButton = document.querySelector('#forward');
+let $backwardButton = document.querySelector('#backward');
+let $playButton = document.querySelector('#play-pause');
 
-function setupPlayPauseButton(playControl) {}
-    let $playButton = document.querySelector('#play-pause');
-    let $playIcon = $playButton.querySelector('.play');
-    let $pauseIcon = $playButton.querySelector('.pause');
-    $playButton.addEventListener('click', function() {
-        if (audioContext.state === 'suspended') {
-            audioContext.resume();
-        }
-        if (this.dataset.playing === 'false') {
-            playControl.start();
-            this.dataset.playing = 'true';
-            $playIcon.style.display = 'none';
-            $pauseIcon.style.display = 'inline';
-        } else if (this.dataset.playing === 'true') {
-            playControl.pause();
-            this.dataset.playing = 'false';
-            $pauseIcon.style.display = 'none';
-            $playIcon.style.display = 'inline';
-        }
-    }, false);
+$forwardButton.addEventListener('click', async ()=>{
+    songIndex = (songIndex + 1) % playlist.length;
+    [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong(false);
+
+});
+
+$backwardButton.addEventListener('click', async ()=>{
+    songIndex--;
+    if (songIndex < 0)
+      songIndex = playlist.length - 1;
+    [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong(false);
+});
+
+
+
+
+let $playIcon = $playButton.querySelector('.play');
+let $pauseIcon = $playButton.querySelector('.pause');
+$playButton.addEventListener('click', function() {
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+    if (this.dataset.playing === 'false') {
+        playControl.start();
+        this.dataset.playing = 'true';
+        $playIcon.style.display = 'none';
+        $pauseIcon.style.display = 'inline';
+    } else if (this.dataset.playing === 'true') {
+        playControl.pause();
+        this.dataset.playing = 'false';
+        $pauseIcon.style.display = 'none';
+        $playIcon.style.display = 'inline';
+    }
+}, false);
 
 
 
@@ -20583,17 +20604,21 @@ $pitchSlider.addEventListener('input', function() {
 }, false);
 
 
-let $timeline = document.querySelector('#timeline');
-let duration;
-const width = $timeline.getBoundingClientRect().width;
+let  duration;
 const height = 200;
+
+let $timeline = document.querySelector('#timeline');
+let width = $timeline.getBoundingClientRect().width;
+
 $timeline.addEventListener('mousedown', (e) => {
-    const rect = $timeline.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    let rect = $timeline.getBoundingClientRect()
+    let x = e.clientX - rect.left
+    let y = e.clientY - rect.top
     console.log("x: " + x + " y: " + y);
-    playControl.seek(x / rect.width * duration);
-});
+    playControl.seek(x / width * duration);
+}, false);
+
+
 
 let cursorData = { position: 0 };
 let cursorLayer = new wavesUI.core.Layer('entity', cursorData, {
@@ -20659,7 +20684,6 @@ function stop() {
 
 function setupTimeline(buffer, playControl, analyser) {
 
-
     duration = buffer.duration;
     const pixelsPerSecond = width / duration;
 
@@ -20692,7 +20716,7 @@ function updateTimeline(buffer, playControl, analyser) {
     timeline.removeLayer(waveformLayer);
     timeline.removeLayer(cursorLayer);
     duration = buffer.duration;
-    const pixelsPerSecond = width / duration;
+    timeline.pixelsPerSecond = width / duration;
 
      waveformLayer = new wavesUI.helpers.WaveformLayer(buffer, {
         height: height
