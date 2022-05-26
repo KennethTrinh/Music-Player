@@ -693,7 +693,7 @@ module.exports = OLAProcessor;
 const OLAProcessor = require('./ola-processor.js');
 const FFT = require('fft.js');
 
-const BUFFERED_BLOCK_SIZE = 2048;
+const BUFFERED_BLOCK_SIZE = 4096;
 
 function genHannWindow(length) {
     let win = new Float32Array(length);
