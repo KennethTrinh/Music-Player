@@ -757,7 +757,6 @@ class PhaseVocoderProcessor extends OLAProcessor {
                 this.applyHannWindow(output);
             }
         }
-
         this.timeCursor += this.hopSize;
     }
 
@@ -860,6 +859,11 @@ class PhaseVocoderProcessor extends OLAProcessor {
                 this.freqComplexBufferShifted[indexShiftedImag] += valueShiftedImag;
             }
         }
+        // for (var i =2048; i<this.freqComplexBufferShifted.length; i+=2){
+        //     this.freqComplexBufferShifted[i] = this.freqComplexBufferShifted[4096-i];
+        //     this.freqComplexBufferShifted[i+1] = -this.freqComplexBufferShifted[4096-i-1];
+        // }
+        // console.log(this.freqComplexBufferShifted[1], this.freqComplexBufferShifted[4095] );
     }
 }
 

@@ -20643,7 +20643,7 @@ let waveformLayer, timeContext;
 
 var requestId;
 // cursor animation loop
-function loop() {
+async function loop() {
     requestId = undefined;
     cursorData.position = playControl.currentPosition;
     timeline.tracks.update(cursorLayer);
@@ -20651,41 +20651,46 @@ function loop() {
     // console.log(playControl.currentPosition );
     var array = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(array);
-
     var canvas = document.getElementById('canvas'),
-                    cwidth = canvas.width,
-                    cheight = canvas.height - 2,
-                    meterWidth = 10, //width of the meters in the spectrum
-                    gap = 2, //gap between meters
-                    capHeight = 2,
-                    capStyle = '#fff',
-                    meterNum = 800 / (10 + 2), //count of the meters
-                    capYPositionArray = [],////store the vertical position of hte caps for the preivous frame
-                    ctx = canvas.getContext('2d'),
-                    gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                gradient.addColorStop(1, '#FF0099');
-                gradient.addColorStop(0.5, '#FF00FF');
-                gradient.addColorStop(0, '#FF99FF');
+        cwidth = canvas.width,
+        cheight = canvas.height - 2,
+        meterWidth = 10, //width of the meters in the spectrum
+        gap = 2, //gap between meters
+        capHeight = 2,
+        capStyle = '#fff',
+        meterNum = 800 / (10 + 2), //count of the meters
+        capYPositionArray = [],////store the vertical position of hte caps for the preivous frame
+        ctx = canvas.getContext('2d'),
+    gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(1, '#FF0099');
+    gradient.addColorStop(0.5, '#FF00FF');
+    gradient.addColorStop(0, '#FF99FF');
     var step = Math.round(array.length / meterNum); //sample limited data from the total array
-                    ctx.clearRect(0, 0, cwidth, cheight);
-                    for (var i = 0; i < meterNum; i++) {
-                        var value = array[i * step];
-                        if (capYPositionArray.length < Math.round(meterNum)) {
-                            capYPositionArray.push(value);
-                        };
-                        ctx.fillStyle = capStyle;
-                        //draw the cap, with transition effect
-                        if (value < capYPositionArray[i]) {
-                            ctx.fillRect(i * 12, cheight - (--capYPositionArray[i]), meterWidth, capHeight);
-                        } else {
-                            ctx.fillRect(i * 12, cheight - value, meterWidth, capHeight);
-                            capYPositionArray[i] = value;
-                        };
-                        ctx.fillStyle = gradient; //set the filllStyle to gradient for a better look
-                        ctx.fillRect(i * 12 /*meterWidth+gap*/ , cheight - value + capHeight, meterWidth, cheight); //the meter
-                    }
+    ctx.clearRect(0, 0, cwidth, cheight);
+    for (var i = 0; i < meterNum; i++) {
+        var value = array[i * step];
+        if (capYPositionArray.length < Math.round(meterNum)) {
+            capYPositionArray.push(value);
+        };
+        ctx.fillStyle = capStyle;
+        //draw the cap, with transition effect
+        if (value < capYPositionArray[i]) {
+            ctx.fillRect(i * 12, cheight - (--capYPositionArray[i]), meterWidth, capHeight);
+        } else {
+            ctx.fillRect(i * 12, cheight - value, meterWidth, capHeight);
+            capYPositionArray[i] = value;
+        };
+        ctx.fillStyle = gradient; //set the filllStyle to gradient for a better look
+        ctx.fillRect(i * 12 /*meterWidth+gap*/ , cheight - value + capHeight, meterWidth, cheight); //the meter
+    }
+    if(playControl.currentPosition > buffer.duration){ // if song ended
+        songIndex = (songIndex + 1) % playlist.length;
+        [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong(false);
+    }
+
     start();
 }
+
 function start(){
     if (!requestId)
         requestId = requestAnimationFrame(loop);
