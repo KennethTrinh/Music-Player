@@ -20459,9 +20459,9 @@ function Song(id, name, path) {
 
 var playlist = [
     new Song(0, 'Mia & Sebastian\'s Theme - Arr. Mercuzio', `music/Mia & Sebastian's Theme - Arr. Mercuzio.mp3`),
-    new Song(1, 'Halsey - Without Me', `music/Halsey - Without Me.mp3`),
-    new Song(2, 'Taylor Swift - Red', `music/Taylor Swift - Red.mp3`),
-    new Song(3, 'The Chainsmokers, Bebe Rexha - Call You Mine', `music/The Chainsmokers, Bebe Rexha - Call You Mine.mp3`)
+    // new Song(1, 'Halsey - Without Me', `music/Halsey - Without Me.mp3`),
+    // new Song(2, 'Taylor Swift - Red', `music/Taylor Swift - Red.mp3`),
+    // new Song(3, 'The Chainsmokers, Bebe Rexha - Call You Mine', `music/The Chainsmokers, Bebe Rexha - Call You Mine.mp3`)
 ];
 
 let songIndex = 0;
