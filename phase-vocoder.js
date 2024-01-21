@@ -813,7 +813,7 @@ class PhaseVocoderProcessor extends OLAProcessor {
             let peakIndex = this.peakIndexes[i];
             let peakIndexShifted = Math.round(peakIndex * pitchFactor);
 
-            if (peakIndexShifted > this.magnitudes.length) {
+            if (peakIndexShifted > this.magnitudes.length / 2 + 1) { // nyquist
                 break;
             }
 
@@ -859,11 +859,6 @@ class PhaseVocoderProcessor extends OLAProcessor {
                 this.freqComplexBufferShifted[indexShiftedImag] += valueShiftedImag;
             }
         }
-        // for (var i =2048; i<this.freqComplexBufferShifted.length; i+=2){
-        //     this.freqComplexBufferShifted[i] = this.freqComplexBufferShifted[4096-i];
-        //     this.freqComplexBufferShifted[i+1] = -this.freqComplexBufferShifted[4096-i-1];
-        // }
-        // console.log(this.freqComplexBufferShifted[1], this.freqComplexBufferShifted[4095] );
     }
 }
 
