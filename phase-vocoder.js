@@ -801,7 +801,6 @@ class PhaseVocoderProcessor extends OLAProcessor {
             this.nbPeaks++;
             i += 2;
         }
-        console.log(this.peakIndexes);
         
     }
 
@@ -850,7 +849,7 @@ class PhaseVocoderProcessor extends OLAProcessor {
                 let indexImag = indexReal + 1;
                 let valueReal = this.freqComplexBuffer[indexReal];
                 let valueImag = this.freqComplexBuffer[indexImag];
-                if (indexReal > this.fftSize) {
+                if (indexReal > this.fftSize) { // nyquist
                     break;
                 }
 

@@ -112,7 +112,6 @@ class PhaseVocoderProcessor extends OLAProcessor {
             this.nbPeaks++;
             i += 2;
         }
-        console.log(this.peakIndexes);
         
     }
 
