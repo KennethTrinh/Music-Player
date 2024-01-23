@@ -686,14 +686,13 @@ class OLAProcessor extends AudioWorkletProcessor {
 }
 
 module.exports = OLAProcessor;
-
 },{}],3:[function(require,module,exports){
 "use strict";
 
 const OLAProcessor = require('./ola-processor.js');
 const FFT = require('fft.js');
 
-const BUFFERED_BLOCK_SIZE = 4096;
+const BUFFERED_BLOCK_SIZE = 2048;
 
 function genHannWindow(length) {
     let win = new Float32Array(length);
@@ -748,6 +747,7 @@ class PhaseVocoderProcessor extends OLAProcessor {
 
                 this.computeMagnitudes();
                 this.findPeaks();
+
                 this.shiftPeaks(pitchFactor);
 
                 this.fft.completeSpectrum(this.freqComplexBufferShifted);
@@ -757,6 +757,7 @@ class PhaseVocoderProcessor extends OLAProcessor {
                 this.applyHannWindow(output);
             }
         }
+
         this.timeCursor += this.hopSize;
     }
 
@@ -788,7 +789,9 @@ class PhaseVocoderProcessor extends OLAProcessor {
 
         while (i < end) {
             let mag = this.magnitudes[i];
-
+            if (i > 256 && this.peakIndexes[this.nbPeaks] < this.peakIndexes[this.nbPeaks - 3]) {
+                break
+            }
             if (this.magnitudes[i - 1] >= mag || this.magnitudes[i - 2] >= mag) {
                 i++;
                 continue;
@@ -802,6 +805,7 @@ class PhaseVocoderProcessor extends OLAProcessor {
             this.nbPeaks++;
             i += 2;
         }
+        
     }
 
     /** Shift peaks and regions of influence by pitchFactor into new specturm */
@@ -813,7 +817,7 @@ class PhaseVocoderProcessor extends OLAProcessor {
             let peakIndex = this.peakIndexes[i];
             let peakIndexShifted = Math.round(peakIndex * pitchFactor);
 
-            if (peakIndexShifted > this.magnitudes.length / 2 + 1) { // nyquist
+            if (peakIndexShifted > this.magnitudes.length) {
                 break;
             }
 
@@ -858,11 +862,10 @@ class PhaseVocoderProcessor extends OLAProcessor {
                 this.freqComplexBufferShifted[indexShiftedReal] += valueShiftedReal;
                 this.freqComplexBufferShifted[indexShiftedImag] += valueShiftedImag;
             }
+
         }
     }
 }
 
 registerProcessor("phase-vocoder-processor", PhaseVocoderProcessor);
-
-
 },{"./ola-processor.js":2,"fft.js":1}]},{},[3]);

@@ -3,8 +3,7 @@ Pitch Shifter in javascript!
 
 Run locally:
 ```
-npx browserify script.js -o bundle.js
-npx http-server -c-1
+npm run build && npm run start
 ```
 
 [Website](https://kennethtrinh.github.io/Music-Player/)

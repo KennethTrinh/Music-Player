@@ -9,14 +9,14 @@
     "README.md"
   ],
   "scripts": {
-    "build-main": "browserify src/main.js -o www/main.js",
-    "build-audio-worklet": "browserify src/phase-vocoder.js -o www/phase-vocoder.js",
-    "build-min": "browserify src/phase-vocoder.js | terser --compress --mangle -o www/phase-vocoder.min.js",
-    "watch-main": "watchify src/main.js -o www/main.js --debug --verbose ",
-    "watch-audio-worklet": "watchify src/phase-vocoder.js -o www/phase-vocoder.js --debug --verbose",
-    "build": "npm run build-main | npm run build-audio-worklet",
-    "watch": "npm run watch-main | npm run watch-audio-worklet",
-    "start": "http-server www/",
+    "build-main": "npx browserify src/main.js -o bundle.js",
+    "build-audio-worklet": "npx browserify src/phase-vocoder.js -o phase-vocoder.js",
+    "build-min": "npx browserify src/phase-vocoder.js && npx terser --compress --mangle -o phase-vocoder.min.js",
+    "watch-main": "npx watchify src/main.js -o main.js --debug --verbose ",
+    "watch-audio-worklet": "watchify src/phase-vocoder.js -o phase-vocoder.js --debug --verbose",
+    "build": "npm run build-main && npm run build-audio-worklet",
+    "watch": "npm run watch-main && npm run watch-audio-worklet",
+    "start": "npx http-server -c-1",
     "test": "echo \"Error: no test specified\" && exit 1",
     "publish": "npm run build-audio-worklet && npm run build-min && npm publish"
   },
