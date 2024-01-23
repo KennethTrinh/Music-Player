@@ -97,12 +97,8 @@ class PhaseVocoderProcessor extends OLAProcessor {
         this.nbPeaks = 0;
         var i = 2;
         let end = this.magnitudes.length - 2;
-
         while (i < end) {
             let mag = this.magnitudes[i];
-            if (i > 256 && this.peakIndexes[this.nbPeaks] < this.peakIndexes[this.nbPeaks - 3]) {
-                break
-            }
             if (this.magnitudes[i - 1] >= mag || this.magnitudes[i - 2] >= mag) {
                 i++;
                 continue;
@@ -116,6 +112,7 @@ class PhaseVocoderProcessor extends OLAProcessor {
             this.nbPeaks++;
             i += 2;
         }
+        console.log(this.peakIndexes);
         
     }
 
@@ -164,6 +161,9 @@ class PhaseVocoderProcessor extends OLAProcessor {
                 let indexImag = indexReal + 1;
                 let valueReal = this.freqComplexBuffer[indexReal];
                 let valueImag = this.freqComplexBuffer[indexImag];
+                if (indexReal > this.fftSize) { // nyquist
+                    break;
+                }
 
                 let valueShiftedReal = valueReal * phaseShiftReal - valueImag * phaseShiftImag;
                 let valueShiftedImag = valueReal * phaseShiftImag + valueImag * phaseShiftReal;
