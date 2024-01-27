@@ -107,7 +107,7 @@ async function setupEngine(buffer) {
     playerEngine.cyclic = false;
 
     await audioContext.audioWorklet.addModule('phase-vocoder.js');
-    phaseVocoderNode = new AudioWorkletNode(audioContext, 'phase-vocoder-processor');
+    phaseVocoderNode = new AudioWorkletNode(audioContext, 'phase-vocoder-processor', { outputChannelCount: [2] });
     analyser = audioContext.createAnalyser();
     playerEngine.connect(phaseVocoderNode);
     phaseVocoderNode.connect(analyser);

@@ -12,10 +12,10 @@
     "build-main": "npx browserify src/main.js -o bundle.js",
     "build-audio-worklet": "npx browserify src/phase-vocoder.js -o phase-vocoder.js",
     "build-min": "npx browserify src/phase-vocoder.js && npx terser --compress --mangle -o phase-vocoder.min.js",
-    "watch-main": "npx watchify src/main.js -o main.js --debug --verbose ",
-    "watch-audio-worklet": "watchify src/phase-vocoder.js -o phase-vocoder.js --debug --verbose",
+    "watch-main": "npx watchify src/main.js -o bundle.js --debug --verbose ",
+    "watch-audio-worklet": "npx watchify src/phase-vocoder.js -o phase-vocoder.js --debug --verbose",
     "build": "npm run build-main && npm run build-audio-worklet",
-    "watch": "npm run watch-main && npm run watch-audio-worklet",
+    "watch": "npm-run-all --parallel watch-main watch-audio-worklet",
     "start": "npx http-server -c-1",
     "test": "echo \"Error: no test specified\" && exit 1",
     "publish": "npm run build-audio-worklet && npm run build-min && npm publish"
@@ -34,9 +34,10 @@
   },
   "devDependencies": {
     "browserify": "^16.5.0",
-    "http-server": "^0.12.3",
-    "watchify": "^3.11.1",
+    "http-server": "^14.1.1",
+    "npm-run-all": "^4.1.5",
     "terser": "^5.5.1",
+    "watchify": "^4.0.0",
     "waves-audio": "^0.5.2",
     "waves-loaders": "^0.1.5",
     "waves-ui": "github:wavesjs/ui"

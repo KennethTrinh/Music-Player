@@ -93,26 +93,22 @@ class PhaseVocoderProcessor extends OLAProcessor {
     }
 
     /** Find peaks in spectrum magnitudes **/
-    findPeaks() {
+    findPeaks(radius = 1) {
         this.nbPeaks = 0;
-        var i = 2;
-        let end = this.magnitudes.length - 2;
+        let i = radius;
+        let end = this.magnitudes.length - radius;
         while (i < end) {
             let mag = this.magnitudes[i];
-            if (this.magnitudes[i - 1] >= mag || this.magnitudes[i - 2] >= mag) {
-                i++;
-                continue;
-            }
-            if (this.magnitudes[i + 1] >= mag || this.magnitudes[i + 2] >= mag) {
+            let surroundingIndexes = Array.from({length: radius * 2 + 1}, (_, k) => k - radius).filter(k => k !== 0);
+            if (surroundingIndexes.some(index => this.magnitudes[i + index] >= mag)) {
                 i++;
                 continue;
             }
 
             this.peakIndexes[this.nbPeaks] = i;
             this.nbPeaks++;
-            i += 2;
+            i += radius; // increment by 1 instead of 2 to check every magnitude
         }
-        
     }
 
     /** Shift peaks and regions of influence by pitchFactor into new specturm */
@@ -151,11 +147,6 @@ class PhaseVocoderProcessor extends OLAProcessor {
                     break;
                 }
 
-                // apply phase correction
-                let omegaDelta = 2 * Math.PI * (binIndexShifted - binIndex) / this.fftSize;
-                let phaseShiftReal = Math.cos(omegaDelta * this.timeCursor);
-                let phaseShiftImag = Math.sin(omegaDelta * this.timeCursor);
-
                 let indexReal = binIndex * 2;
                 let indexImag = indexReal + 1;
                 let valueReal = this.freqComplexBuffer[indexReal];
@@ -163,6 +154,11 @@ class PhaseVocoderProcessor extends OLAProcessor {
                 if (indexReal > this.fftSize) { // nyquist
                     break;
                 }
+            
+                // apply phase correction
+                let omegaDelta = 2 * Math.PI * (binIndexShifted - binIndex) / this.fftSize;
+                let phaseShiftReal = Math.cos(omegaDelta * this.timeCursor);
+                let phaseShiftImag = Math.sin(omegaDelta * this.timeCursor);
 
                 let valueShiftedReal = valueReal * phaseShiftReal - valueImag * phaseShiftImag;
                 let valueShiftedImag = valueReal * phaseShiftImag + valueImag * phaseShiftReal;
