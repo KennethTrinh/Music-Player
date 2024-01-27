@@ -790,8 +790,12 @@ class PhaseVocoderProcessor extends OLAProcessor {
         let end = this.magnitudes.length - radius;
         while (i < end) {
             let mag = this.magnitudes[i];
-            let surroundingIndexes = Array.from({length: radius * 2 + 1}, (_, k) => k - radius).filter(k => k !== 0);
-            if (surroundingIndexes.some(index => this.magnitudes[i + index] >= mag)) {
+            // let surroundingIndexes = Array.from({length: radius * 2 + 1}, (_, k) => k - radius).filter(k => k !== 0);
+            // if (surroundingIndexes.some(index => this.magnitudes[i + index] >= mag)) {
+            //     i++;
+            //     continue;
+            // }
+            if (this.magnitudes[i - radius] >= mag || this.magnitudes[i + radius] >= mag) {
                 i++;
                 continue;
             }
@@ -801,40 +805,6 @@ class PhaseVocoderProcessor extends OLAProcessor {
             i += radius; // increment by 1 instead of 2 to check every magnitude
         }
     }
-    // shiftSamples(pitchFactor) {
-    //     // zero-fill new spectrum
-    //     this.freqComplexBufferShifted.fill(0);
-    
-    //     for (var i = 0; i < this.magnitudes.length; i++) {
-    //         let sampleIndex = i;
-    //         let sampleIndexShifted = Math.round(sampleIndex * pitchFactor);
-    
-    //         if (sampleIndexShifted >= this.magnitudes.length) {
-    //             break;
-    //         }
-    
-    //         let indexReal = sampleIndex * 2;
-    //         let indexImag = indexReal + 1;
-    //         let valueReal = this.freqComplexBuffer[indexReal];
-    //         let valueImag = this.freqComplexBuffer[indexImag];
-    //         if (indexReal > this.fftSize) { // nyquist
-    //             break;
-    //         }
-    
-    //         // apply phase correction
-    //         let omegaDelta = 2 * Math.PI * (sampleIndexShifted - sampleIndex) / this.fftSize;
-    //         let phaseShiftReal = Math.cos(omegaDelta * this.timeCursor);
-    //         let phaseShiftImag = Math.sin(omegaDelta * this.timeCursor);
-    
-    //         let valueShiftedReal = valueReal * phaseShiftReal - valueImag * phaseShiftImag;
-    //         let valueShiftedImag = valueReal * phaseShiftImag + valueImag * phaseShiftReal;
-    
-    //         let indexShiftedReal = sampleIndexShifted * 2;
-    //         let indexShiftedImag = indexShiftedReal + 1;
-    //         this.freqComplexBufferShifted[indexShiftedReal] += valueShiftedReal;
-    //         this.freqComplexBufferShifted[indexShiftedImag] += valueShiftedImag;
-    //     }
-    // }
 
     /** Shift peaks and regions of influence by pitchFactor into new specturm */
     shiftPeaks(pitchFactor) {
