@@ -337,7 +337,9 @@ window.extract = (data) => {
         let file = files[i];
         let file_name = file.name.split('.').slice(0, -1).join('.');
         $.when(initAudio(data)).done(function (b) {
-            $('.playlist').append(`<div class=playlist-row id=${playlist.length} onclick="nav(this.id)"> ${file_name} </div>`);
+            $('.playlist').append(
+                `<div class=playlist-row id=${playlist.length} onclick="nav(this.id)"> ${file_name} </div>`
+            );
             playlist.push(new Song(playlist.length, file_name, URL.createObjectURL(file)));
         });
     }
