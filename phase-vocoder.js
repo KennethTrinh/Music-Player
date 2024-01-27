@@ -692,7 +692,7 @@ module.exports = OLAProcessor;
 const OLAProcessor = require('./ola-processor.js');
 const FFT = require('fft.js');
 
-const BUFFERED_BLOCK_SIZE = 2048;
+const BUFFERED_BLOCK_SIZE = 4096;
 
 function genHannWindow(length) {
     let win = new Float32Array(length);
@@ -726,6 +726,8 @@ class PhaseVocoderProcessor extends OLAProcessor {
         this.freqComplexBuffer = this.fft.createComplexArray();
         this.freqComplexBufferShifted = this.fft.createComplexArray();
         this.timeComplexBuffer = this.fft.createComplexArray();
+        this.previousPhase = new Float32Array(this.fftSize / 2 + 1);
+        this.phaseCumulative = new Float32Array(this.fftSize / 2 + 1);
         this.magnitudes = new Float32Array(this.fftSize / 2 + 1);
         this.peakIndexes = new Int32Array(this.magnitudes.length);
         this.nbPeaks = 0;
@@ -747,8 +749,8 @@ class PhaseVocoderProcessor extends OLAProcessor {
 
                 this.computeMagnitudes();
                 this.findPeaks();
-
                 this.shiftPeaks(pitchFactor);
+                // this.shiftSamples(pitchFactor);
 
                 this.fft.completeSpectrum(this.freqComplexBufferShifted);
                 this.fft.inverseTransform(this.timeComplexBuffer, this.freqComplexBufferShifted);
@@ -799,6 +801,40 @@ class PhaseVocoderProcessor extends OLAProcessor {
             i += radius; // increment by 1 instead of 2 to check every magnitude
         }
     }
+    // shiftSamples(pitchFactor) {
+    //     // zero-fill new spectrum
+    //     this.freqComplexBufferShifted.fill(0);
+    
+    //     for (var i = 0; i < this.magnitudes.length; i++) {
+    //         let sampleIndex = i;
+    //         let sampleIndexShifted = Math.round(sampleIndex * pitchFactor);
+    
+    //         if (sampleIndexShifted >= this.magnitudes.length) {
+    //             break;
+    //         }
+    
+    //         let indexReal = sampleIndex * 2;
+    //         let indexImag = indexReal + 1;
+    //         let valueReal = this.freqComplexBuffer[indexReal];
+    //         let valueImag = this.freqComplexBuffer[indexImag];
+    //         if (indexReal > this.fftSize) { // nyquist
+    //             break;
+    //         }
+    
+    //         // apply phase correction
+    //         let omegaDelta = 2 * Math.PI * (sampleIndexShifted - sampleIndex) / this.fftSize;
+    //         let phaseShiftReal = Math.cos(omegaDelta * this.timeCursor);
+    //         let phaseShiftImag = Math.sin(omegaDelta * this.timeCursor);
+    
+    //         let valueShiftedReal = valueReal * phaseShiftReal - valueImag * phaseShiftImag;
+    //         let valueShiftedImag = valueReal * phaseShiftImag + valueImag * phaseShiftReal;
+    
+    //         let indexShiftedReal = sampleIndexShifted * 2;
+    //         let indexShiftedImag = indexShiftedReal + 1;
+    //         this.freqComplexBufferShifted[indexShiftedReal] += valueShiftedReal;
+    //         this.freqComplexBufferShifted[indexShiftedImag] += valueShiftedImag;
+    //     }
+    // }
 
     /** Shift peaks and regions of influence by pitchFactor into new specturm */
     shiftPeaks(pitchFactor) {

@@ -10,6 +10,7 @@ npm run watch
 In another terminal:
 ```
 npm run start
+```
 
 
 [Website](https://kennethtrinh.github.io/Music-Player/)

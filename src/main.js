@@ -5,8 +5,8 @@ const wavesLoaders = require('waves-loaders');
 let audioContext = wavesAudio.audioContext;
 let loader = new wavesLoaders.AudioBufferLoader();
 
-var speedFactor = 1.0;
-var pitchFactor = 1.0;
+let speedFactor = 1.0;
+let pitchFactor = 1.0;
 
 function Song(id, name, path) {
   this.id = id;
@@ -14,21 +14,19 @@ function Song(id, name, path) {
   this.path = path;
 }
 
-var playlist = [
+let playlist = [
     new Song(0, 'Mia & Sebastian\'s Theme - Arr. Mercuzio', `music/Mia & Sebastian's Theme - Arr. Mercuzio.mp3`),
-    // new Song(1, 'Halsey - Without Me', `music/Halsey - Without Me.mp3`),
-    // new Song(2, 'Taylor Swift - Red', `music/Taylor Swift - Red.mp3`),
-    // new Song(3, 'The Chainsmokers, Bebe Rexha - Call You Mine', `music/The Chainsmokers, Bebe Rexha - Call You Mine.mp3`)
+
 ];
 
 let songIndex = 0;
-var playControl, buffer, playerEngine, phaseVocoderNode,
+let playControl, buffer, playerEngine, phaseVocoderNode,
 analyser, timeline, pitchFactorParam;
 
 async function init() {
     let Playlist= document.getElementsByClassName('playlist')[0];
-    for (var i=0; i<playlist.length; i++){
-        var div2 = document.createElement('div');
+    for (let i=0; i<playlist.length; i++){
+        let div2 = document.createElement('div');
         div2.className = 'playlist-row';
         div2.id = playlist[i].id;
         div2.onclick = async function () {
@@ -72,15 +70,15 @@ async function loadSong(initial){
     }
     pitchFactorParam = phaseVocoderNode.parameters.get('pitchFactor');
     if (!initial){
-        playControl.speed = oldSpeed;
-        pitchFactorParam.value = parseFloat(oldPitch) * 1 / parseFloat(oldSpeed);
+        playControl.speed = Math.pow(2, parseFloat(oldSpeed)/12);
+        pitchFactorParam.value = Math.pow(2, parseFloat(oldPitch - oldSpeed)/12);
     }
 
     //setup timeline
     if (initial)
-        setupTimeline(buffer, playControl, analyser);
+        setupTimeline(buffer);
     else
-        updateTimeline(buffer, playControl, analyser);
+        updateTimeline(buffer);
 
     if (wasPlaying == 'true')
         playControl.start();
@@ -161,10 +159,10 @@ $playButton.addEventListener('click', function() {
 let $speedSlider = document.querySelector('#speed');
 let $valueLabel = document.querySelector('#speed-value');
 $speedSlider.addEventListener('input', function() {
-    speedFactor = parseFloat(this.value);
+    speedFactor = Math.pow(2, parseFloat(this.value)/12);
     playControl.speed = speedFactor;
     pitchFactorParam.value = pitchFactor * 1 / speedFactor;
-    $valueLabel.innerHTML = speedFactor.toFixed(2);
+    $valueLabel.innerHTML = this.value;
 }, false);
 
 
@@ -173,7 +171,7 @@ let $pitchvalueLabel = document.querySelector('#pitch-value');
 $pitchSlider.addEventListener('input', function() {
     pitchFactor = Math.pow(2, parseFloat(this.value)/12);
     pitchFactorParam.value = pitchFactor * 1 / speedFactor;
-    $pitchvalueLabel.innerHTML = pitchFactor.toFixed(2);
+    $pitchvalueLabel.innerHTML = this.value;
 }, false);
 
 
@@ -199,7 +197,7 @@ let cursorLayer = new wavesUI.core.Layer('entity', cursorData, {
 });
 let waveformLayer, timeContext;
 
-var requestId;
+let requestId;
 // cursor animation loop
 async function loop() {
     requestId = undefined;
@@ -207,13 +205,12 @@ async function loop() {
     timeline.tracks.update(cursorLayer);
 
     // console.log(playControl.currentPosition );
-    var array = new Uint8Array(analyser.frequencyBinCount);
+    let array = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(array);
-    var canvas = document.getElementById('canvas'),
+    let canvas = document.getElementById('canvas'),
         cwidth = canvas.width,
         cheight = canvas.height - 2,
         meterWidth = 10, //width of the meters in the spectrum
-        gap = 2, //gap between meters
         capHeight = 2,
         capStyle = '#fff',
         meterNum = 800 / (10 + 2), //count of the meters
@@ -223,10 +220,10 @@ async function loop() {
     gradient.addColorStop(1, '#FF0099');
     gradient.addColorStop(0.5, '#FF00FF');
     gradient.addColorStop(0, '#FF99FF');
-    var step = Math.round(array.length / meterNum); //sample limited data from the total array
+    let step = Math.round(array.length / meterNum); //sample limited data from the total array
     ctx.clearRect(0, 0, cwidth, cheight);
-    for (var i = 0; i < meterNum; i++) {
-        var value = array[i * step];
+    for (let i = 0; i < meterNum; i++) {
+        let value = array[i * step];
         if (capYPositionArray.length < Math.round(meterNum)) {
             capYPositionArray.push(value);
         };
@@ -260,7 +257,7 @@ function stop() {
     }
 }
 
-function setupTimeline(buffer, playControl, analyser) {
+function setupTimeline(buffer) {
 
     duration = buffer.duration;
     const pixelsPerSecond = width / duration;
@@ -277,7 +274,7 @@ function setupTimeline(buffer, playControl, analyser) {
     cursorLayer.configureShape(wavesUI.shapes.Cursor, {
         x: (data) => { return data.position; }
     }, {
-        color: 'red'
+        color: 'deeppink'
     });
 
     timeline.addLayer(waveformLayer, 'main');
@@ -289,7 +286,7 @@ function setupTimeline(buffer, playControl, analyser) {
     start()
 }
 
-function updateTimeline(buffer, playControl, analyser) {
+function updateTimeline(buffer) {
     // timeline.remove($timeline);
     timeline.removeLayer(waveformLayer);
     timeline.removeLayer(cursorLayer);
@@ -305,7 +302,7 @@ function updateTimeline(buffer, playControl, analyser) {
     cursorLayer.configureShape(wavesUI.shapes.Cursor, {
         x: (data) => { return data.position; }
     }, {
-        color: 'red'
+        color: 'deeppink'
     });
 
     timeline.addLayer(waveformLayer, 'main');
@@ -319,8 +316,8 @@ function updateTimeline(buffer, playControl, analyser) {
 
 function initAudio(data) {
     let audioContext = new AudioContext();
-    var audioRequest = new XMLHttpRequest();
-    var dfd = jQuery.Deferred();
+    let audioRequest = new XMLHttpRequest();
+    let dfd = jQuery.Deferred();
 
     audioRequest.open("GET", URL.createObjectURL(data.files[0]), true);
     audioRequest.responseType = "arraybuffer";
@@ -334,14 +331,18 @@ function initAudio(data) {
     return dfd.promise();
 }
 
-window.extract = function (data){
-    var file = data.files[0];
-    var file_name = file.name.substring(0, file.name.length - 4);
-    $.when(initAudio(data)).done(function (b) {
-        $('.playlist').append(`<div class=playlist-row id=${playlist.length} onclick="nav(this.id)"> ${file_name} </div>`);
-        playlist.push(new Song(playlist.length, file_name, URL.createObjectURL(file)));
-    });
+window.extract = (data) => {
+    let files = data.files;
+    for(let i = 0; i < files.length; i++) {
+        let file = files[i];
+        let file_name = file.name.split('.').slice(0, -1).join('.');
+        $.when(initAudio(data)).done(function (b) {
+            $('.playlist').append(`<div class=playlist-row id=${playlist.length} onclick="nav(this.id)"> ${file_name} </div>`);
+            playlist.push(new Song(playlist.length, file_name, URL.createObjectURL(file)));
+        });
+    }
 }
+
 window.nav = function (id){
     songIndex = id;
     loadSong(false);
