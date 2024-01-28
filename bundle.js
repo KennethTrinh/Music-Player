@@ -20444,15 +20444,83 @@ require('./es6.array.iterator');
 var Iterators = require('./$.iterators');
 Iterators.NodeList = Iterators.HTMLCollection = Iterators.Array;
 },{"./$.iterators":288,"./es6.array.iterator":317}],331:[function(require,module,exports){
+class EqualizerNode extends GainNode {
+    constructor(audioContext) {
+        super(audioContext);
+        this.audioContext = audioContext;
+        // Define your equalizer bands
+        const equalizerBands = [
+            { f: 32, type: 'lowshelf' },
+            { f: 64, type: 'peaking' },
+            { f: 125, type: 'peaking' },
+            { f: 250, type: 'peaking' },
+            { f: 500, type: 'peaking' },
+            { f: 1000, type: 'peaking' },
+            { f: 2000, type: 'peaking' },
+            { f: 4000, type: 'peaking' },
+            { f: 8000, type: 'peaking' },
+            { f: 16000, type: 'highshelf' }
+        ];
+        // Create your biquad filters
+        this.biquads = equalizerBands.map((band) => {
+            const biquad = this.audioContext.createBiquadFilter();
+            biquad.type = band.type;
+            biquad.frequency.value = band.f;
+            biquad.gain.value = 0;
+            return biquad;
+        });
+        // Connect the biquads
+        this.biquads.reduce((prev, curr) => {
+            prev.connect(curr);
+            return curr;
+        });
+
+        this.connect(this.biquads[0]);
+
+        // Connect the last biquad to the audio context's destination
+        this.biquads[this.biquads.length - 1].connect(this.audioContext.destination);
+    }
+
+    getGain(frequency) {
+        const biquad = this.biquads.find(biquad => biquad.frequency.value === frequency);
+        return biquad ? biquad.gain.value : null;
+    }
+
+    setGain(frequency, gain) {
+        // const biquads = this.biquads.filter(biquad => biquad.frequency.value === frequency);
+        // biquads.forEach(biquad => {
+        //     biquad.gain.value = gain;
+        // });
+        this.biquads.find(biquad => biquad.frequency.value === frequency).gain.value = gain;
+    }
+    getGains() {
+        return this.biquads.map(biquad => {
+            return {
+                frequency: biquad.frequency.value,
+                gain: biquad.gain.value
+            };
+        });
+    }
+
+    setGains(gains) {
+        // gains is an array of { frequency: number, gain: number } objects
+        gains.forEach(gain => this.setGain(gain.frequency, gain.gain));
+    }
+}
+
+module.exports = EqualizerNode;
+},{}],332:[function(require,module,exports){
 const wavesAudio = require('waves-audio');
 const wavesUI = require('waves-ui');
 const wavesLoaders = require('waves-loaders');
 
+const EqualizerNode = require('./equalizer');
+
 let audioContext = wavesAudio.audioContext;
 let loader = new wavesLoaders.AudioBufferLoader();
 
-let speedFactor = 1.0;
-let pitchFactor = 1.0;
+let speedFactor = 0.0;
+let pitchFactor = 0.0;
 
 function Song(id, name, path) {
   this.id = id;
@@ -20466,8 +20534,9 @@ let playlist = [
 ];
 
 let songIndex = 0;
-let playControl, buffer, playerEngine, phaseVocoderNode,
-analyser, timeline, pitchFactorParam;
+let playControl, buffer, playerEngine, 
+    phaseVocoderNode, equalizer, analyser, 
+    timeline, pitchFactorParam;
 
 async function init() {
     let Playlist= document.getElementsByClassName('playlist')[0];
@@ -20501,9 +20570,10 @@ async function loadSong(initial){
 
     stop(); //stop the previous animation loop
 
+    let oldEqualizer = initial ? null : equalizer.getGains();
     //load the audio
     buffer = await loader.load( playlist[songIndex].path );
-    [playerEngine, phaseVocoderNode, analyser] = await setupEngine(buffer);
+    [playerEngine, phaseVocoderNode, equalizer, analyser] = await setupEngine(buffer);
     playControl = new wavesAudio.PlayControl(playerEngine);
     playControl.setLoopBoundaries(0, buffer.duration);
     playControl.loop = false;
@@ -20517,7 +20587,9 @@ async function loadSong(initial){
     pitchFactorParam = phaseVocoderNode.parameters.get('pitchFactor');
     if (!initial){
         playControl.speed = Math.pow(2, parseFloat(oldSpeed)/12);
-        pitchFactorParam.value = Math.pow(2, parseFloat(oldPitch - oldSpeed)/12);
+        pitchFactorParam.value = Math.pow(2, 
+                                        (parseFloat(oldPitch) - parseFloat(oldSpeed)) / 12);
+        equalizer.setGains(oldEqualizer);
     }
 
     //setup timeline
@@ -20545,6 +20617,7 @@ function handleNoWorklet() {
     $controls.style.display = 'none';
 }
 
+
 async function setupEngine(buffer) {
     playerEngine = new wavesAudio.PlayerEngine(buffer);
     playerEngine.buffer = buffer;
@@ -20552,12 +20625,16 @@ async function setupEngine(buffer) {
 
     await audioContext.audioWorklet.addModule('phase-vocoder.js');
     phaseVocoderNode = new AudioWorkletNode(audioContext, 'phase-vocoder-processor', { outputChannelCount: [2] });
+    equalizer = new EqualizerNode(audioContext);
     analyser = audioContext.createAnalyser();
+
     playerEngine.connect(phaseVocoderNode);
-    phaseVocoderNode.connect(analyser);
+    phaseVocoderNode.connect(equalizer);
+    equalizer.connect(analyser);
+    // phaseVocoderNode.connect(analyser);
     analyser.connect(audioContext.destination);
 
-    return [playerEngine, phaseVocoderNode, analyser];
+    return [playerEngine, phaseVocoderNode, equalizer, analyser];
 }
 
 
@@ -20607,7 +20684,7 @@ let $valueLabel = document.querySelector('#speed-value');
 $speedSlider.addEventListener('input', function() {
     speedFactor = Math.pow(2, parseFloat(this.value)/12);
     playControl.speed = speedFactor;
-    pitchFactorParam.value = pitchFactor * 1 / speedFactor;
+    pitchFactorParam.value = Math.pow(2, (pitchFactor - parseFloat(this.value))/12);
     $valueLabel.innerHTML = this.value;
 }, false);
 
@@ -20615,10 +20692,29 @@ $speedSlider.addEventListener('input', function() {
 let $pitchSlider = document.querySelector('#pitch');
 let $pitchvalueLabel = document.querySelector('#pitch-value');
 $pitchSlider.addEventListener('input', function() {
-    pitchFactor = Math.pow(2, parseFloat(this.value)/12);
-    pitchFactorParam.value = pitchFactor * 1 / speedFactor;
+    pitchFactor = this.value;
+    pitchFactorParam.value = Math.pow(2, (parseFloat(this.value) - speedFactor)/12);
     $pitchvalueLabel.innerHTML = this.value;
 }, false);
+
+let $equalizer = document.querySelector('#equalizer');
+let $equalizerLabel = document.querySelector('#equalizer-value');
+let $frequencySelect = document.querySelector('#frequency-select');
+$equalizer.addEventListener('input', function() {
+    let frequency = $frequencySelect.value;
+    let gain = this.value;
+    equalizer.setGain(parseFloat(frequency), parseFloat(gain));
+    $equalizerLabel.innerHTML = this.value;
+}, false);
+
+$frequencySelect.addEventListener('change', function() {
+    let frequency = this.value;
+    let gain = equalizer.getGain(parseFloat(frequency));
+    $equalizer.value = gain;
+    $equalizerLabel.innerHTML = gain;
+}, false);
+
+
 
 
 let duration;
@@ -20797,4 +20893,4 @@ window.nav = function (id){
 }
 
 window.addEventListener('load', init);
-},{"waves-audio":145,"waves-loaders":150,"waves-ui":218}]},{},[331]);
+},{"./equalizer":331,"waves-audio":145,"waves-loaders":150,"waves-ui":218}]},{},[332]);

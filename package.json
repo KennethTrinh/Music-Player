@@ -10,12 +10,14 @@
   ],
   "scripts": {
     "build-main": "npx browserify src/main.js -o bundle.js",
+    "build-equalizer": "npx browserify src/equalizer.js -o equalizer.js",
     "build-audio-worklet": "npx browserify src/phase-vocoder.js -o phase-vocoder.js",
     "build-min": "npx browserify src/phase-vocoder.js && npx terser --compress --mangle -o phase-vocoder.min.js",
     "watch-main": "npx watchify src/main.js -o bundle.js --debug --verbose ",
+    "watch-equalizer": "npx watchify src/equalizer.js -o equalizer.js --debug --verbose",
     "watch-audio-worklet": "npx watchify src/phase-vocoder.js -o phase-vocoder.js --debug --verbose",
-    "build": "npm run build-main && npm run build-audio-worklet",
-    "watch": "npm-run-all --parallel watch-main watch-audio-worklet",
+    "build": "npm run build-main && npm run build-equalizer && npm run build-audio-worklet",
+    "watch": "npm-run-all --parallel watch-main watch-equalizer watch-audio-worklet",
     "start": "npx http-server -c-1",
     "test": "echo \"Error: no test specified\" && exit 1",
     "publish": "npm run build-audio-worklet && npm run build-min && npm publish"

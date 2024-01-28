@@ -97,7 +97,7 @@ input[type="range"] {
 
  input[type=range]{
     -webkit-appearance: none;
-    width: 250px;
+    width: 200px;
     display: block;
 }
 
@@ -153,3 +153,7 @@ input[type=range]:-moz-focusring{
 input[type=range]:focus::-moz-range-track {
     background: #ccc;
 }
+
+#frequency-select {
+    float: right;
+}   

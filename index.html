@@ -36,15 +36,32 @@
             <label for="speed">
                 <span>Speed </span>
                 <input id="speed" type="range" min="-12" max="12" step="1" />
-                <span id="speed-value">1</span>
+                <span id="speed-value">0</span>
             </label>
             <label for="pitch">
                 <span>Pitch (semitones)</span>
                 <input id="pitch" type="range" min="-12" max="12" step="1" />
-                <span id="pitch-value">1</span>
+                <span id="pitch-value">0</span>
+            </label>
+            <label for="equalizer">
+                <span>Equalizer gain</span>
+                <input id="equalizer" type="range" min="0" max="50" step="1" value="0" />
+                <span id="equalizer-value">0</span>
             </label>
         </div>
         <input type="file" accept=".mp3,audio/*" onchange="extract(this)" multiple>
+        <select id="frequency-select">
+            <option value="32">32 Hz</option>
+            <option value="64">64 Hz</option>
+            <option value="125">125 Hz</option>
+            <option value="250">250 Hz</option>
+            <option value="500">500 Hz</option>
+            <option value="1000">1000 Hz</option>
+            <option value="2000">2000 Hz</option>
+            <option value="4000">4000 Hz</option>
+            <option value="8000">8000 Hz</option>
+            <option value="16000">16000 Hz</option>
+        </select>
     </div>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="./bundle.js"></script>

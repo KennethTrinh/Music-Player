@@ -2,11 +2,13 @@ const wavesAudio = require('waves-audio');
 const wavesUI = require('waves-ui');
 const wavesLoaders = require('waves-loaders');
 
+const EqualizerNode = require('./equalizer');
+
 let audioContext = wavesAudio.audioContext;
 let loader = new wavesLoaders.AudioBufferLoader();
 
-let speedFactor = 1.0;
-let pitchFactor = 1.0;
+let speedFactor = 0.0;
+let pitchFactor = 0.0;
 
 function Song(id, name, path) {
   this.id = id;
@@ -20,8 +22,9 @@ let playlist = [
 ];
 
 let songIndex = 0;
-let playControl, buffer, playerEngine, phaseVocoderNode,
-analyser, timeline, pitchFactorParam;
+let playControl, buffer, playerEngine, 
+    phaseVocoderNode, equalizer, analyser, 
+    timeline, pitchFactorParam;
 
 async function init() {
     let Playlist= document.getElementsByClassName('playlist')[0];
@@ -55,9 +58,10 @@ async function loadSong(initial){
 
     stop(); //stop the previous animation loop
 
+    let oldEqualizer = initial ? null : equalizer.getGains();
     //load the audio
     buffer = await loader.load( playlist[songIndex].path );
-    [playerEngine, phaseVocoderNode, analyser] = await setupEngine(buffer);
+    [playerEngine, phaseVocoderNode, equalizer, analyser] = await setupEngine(buffer);
     playControl = new wavesAudio.PlayControl(playerEngine);
     playControl.setLoopBoundaries(0, buffer.duration);
     playControl.loop = false;
@@ -71,7 +75,9 @@ async function loadSong(initial){
     pitchFactorParam = phaseVocoderNode.parameters.get('pitchFactor');
     if (!initial){
         playControl.speed = Math.pow(2, parseFloat(oldSpeed)/12);
-        pitchFactorParam.value = Math.pow(2, parseFloat(oldPitch - oldSpeed)/12);
+        pitchFactorParam.value = Math.pow(2, 
+                                        (parseFloat(oldPitch) - parseFloat(oldSpeed)) / 12);
+        equalizer.setGains(oldEqualizer);
     }
 
     //setup timeline
@@ -99,6 +105,7 @@ function handleNoWorklet() {
     $controls.style.display = 'none';
 }
 
+
 async function setupEngine(buffer) {
     playerEngine = new wavesAudio.PlayerEngine(buffer);
     playerEngine.buffer = buffer;
@@ -106,12 +113,16 @@ async function setupEngine(buffer) {
 
     await audioContext.audioWorklet.addModule('phase-vocoder.js');
     phaseVocoderNode = new AudioWorkletNode(audioContext, 'phase-vocoder-processor', { outputChannelCount: [2] });
+    equalizer = new EqualizerNode(audioContext);
     analyser = audioContext.createAnalyser();
+
     playerEngine.connect(phaseVocoderNode);
-    phaseVocoderNode.connect(analyser);
+    phaseVocoderNode.connect(equalizer);
+    equalizer.connect(analyser);
+    // phaseVocoderNode.connect(analyser);
     analyser.connect(audioContext.destination);
 
-    return [playerEngine, phaseVocoderNode, analyser];
+    return [playerEngine, phaseVocoderNode, equalizer, analyser];
 }
 
 
@@ -161,7 +172,7 @@ let $valueLabel = document.querySelector('#speed-value');
 $speedSlider.addEventListener('input', function() {
     speedFactor = Math.pow(2, parseFloat(this.value)/12);
     playControl.speed = speedFactor;
-    pitchFactorParam.value = pitchFactor * 1 / speedFactor;
+    pitchFactorParam.value = Math.pow(2, (pitchFactor - parseFloat(this.value))/12);
     $valueLabel.innerHTML = this.value;
 }, false);
 
@@ -169,10 +180,29 @@ $speedSlider.addEventListener('input', function() {
 let $pitchSlider = document.querySelector('#pitch');
 let $pitchvalueLabel = document.querySelector('#pitch-value');
 $pitchSlider.addEventListener('input', function() {
-    pitchFactor = Math.pow(2, parseFloat(this.value)/12);
-    pitchFactorParam.value = pitchFactor * 1 / speedFactor;
+    pitchFactor = this.value;
+    pitchFactorParam.value = Math.pow(2, (parseFloat(this.value) - speedFactor)/12);
     $pitchvalueLabel.innerHTML = this.value;
 }, false);
+
+let $equalizer = document.querySelector('#equalizer');
+let $equalizerLabel = document.querySelector('#equalizer-value');
+let $frequencySelect = document.querySelector('#frequency-select');
+$equalizer.addEventListener('input', function() {
+    let frequency = $frequencySelect.value;
+    let gain = this.value;
+    equalizer.setGain(parseFloat(frequency), parseFloat(gain));
+    $equalizerLabel.innerHTML = this.value;
+}, false);
+
+$frequencySelect.addEventListener('change', function() {
+    let frequency = this.value;
+    let gain = equalizer.getGain(parseFloat(frequency));
+    $equalizer.value = gain;
+    $equalizerLabel.innerHTML = gain;
+}, false);
+
+
 
 
 let duration;
