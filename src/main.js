@@ -267,7 +267,7 @@ async function loop() {
     }
     if(playControl.currentPosition > buffer.duration){ // if song ended
         songIndex = (songIndex + 1) % playlist.length;
-        [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong(false);
+        await loadSong(false);
     }
 
     startAnimation();
