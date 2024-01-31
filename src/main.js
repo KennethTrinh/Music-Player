@@ -34,12 +34,12 @@ async function init() {
         div2.id = playlist[i].id;
         div2.onclick = async function () {
                         songIndex = this.id;
-                        [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong(false);
+                        await loadSong(false);
                         };
         div2.innerHTML = playlist[i].name;
         Playlist.appendChild(div2);
     }
-    let [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong(true);
+    await loadSong(true);
 
 }
 
@@ -56,24 +56,27 @@ async function loadSong(initial){
     if (playControl)
         playControl.stop();
 
-    stop(); //stop the previous animation loop
+    stopAnimation(); 
 
     let oldEqualizer = initial ? null : equalizer.getGains();
+    if (window.performance && performance.memory) {
+        console.log(`Total Memory: ${performance.memory.totalJSHeapSize / (1024 * 1024)} MB`, '\n',
+                    `Used Memory: ${performance.memory.usedJSHeapSize / (1024 * 1024)} MB`, '\n',
+                    `Limit: ${performance.memory.jsHeapSizeLimit / (1024 * 1024)} MB`);
+    }
+
     //load the audio
     buffer = await loader.load( playlist[songIndex].path );
-    [playerEngine, phaseVocoderNode, equalizer, analyser] = await setupEngine(buffer);
+    await setupEngine(buffer);
     playControl = new wavesAudio.PlayControl(playerEngine);
     playControl.setLoopBoundaries(0, buffer.duration);
     playControl.loop = false;
 
     //setting up pitch slider
-    let oldPitch, oldSpeed;
-    if (!initial){
-        oldPitch = $pitchvalueLabel.innerHTML
-        oldSpeed = $valueLabel.innerHTML;
-    }
     pitchFactorParam = phaseVocoderNode.parameters.get('pitchFactor');
     if (!initial){
+        let oldPitch = $pitchvalueLabel.innerHTML
+        let oldSpeed = $valueLabel.innerHTML;
         playControl.speed = Math.pow(2, parseFloat(oldSpeed)/12);
         pitchFactorParam.value = Math.pow(2, 
                                         (parseFloat(oldPitch) - parseFloat(oldSpeed)) / 12);
@@ -81,10 +84,7 @@ async function loadSong(initial){
     }
 
     //setup timeline
-    if (initial)
-        setupTimeline(buffer);
-    else
-        updateTimeline(buffer);
+    updateTimeline(buffer, initial);
 
     if (wasPlaying == 'true')
         playControl.start();
@@ -93,7 +93,6 @@ async function loadSong(initial){
     $forwardButton.classList.remove('disabled');
     $backwardButton.classList.remove('disabled');
 
-    return [buffer, playControl, playerEngine, phaseVocoderNode, analyser];
 }
 
 function handleNoWorklet() {
@@ -121,8 +120,6 @@ async function setupEngine(buffer) {
     equalizer.connect(analyser);
     // phaseVocoderNode.connect(analyser);
     analyser.connect(audioContext.destination);
-
-    return [playerEngine, phaseVocoderNode, equalizer, analyser];
 }
 
 
@@ -132,7 +129,7 @@ let $playButton = document.querySelector('#play-pause');
 
 $forwardButton.addEventListener('click', async ()=>{
     songIndex = (songIndex + 1) % playlist.length;
-    [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong(false);
+    loadSong(false);
 
 });
 
@@ -140,7 +137,7 @@ $backwardButton.addEventListener('click', async ()=>{
     songIndex--;
     if (songIndex < 0)
       songIndex = playlist.length - 1;
-    [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong(false);
+    loadSong(false);
 });
 
 
@@ -273,57 +270,39 @@ async function loop() {
         [buffer, playControl, playerEngine, phaseVocoderNode, analyser] = await loadSong(false);
     }
 
-    start();
+    startAnimation();
 }
 
-function start(){
+function startAnimation(){
     if (!requestId)
         requestId = requestAnimationFrame(loop);
 }
-function stop() {
+function stopAnimation() {
     if (requestId) {
        cancelAnimationFrame(requestId);
        requestId = undefined;
     }
 }
 
-function setupTimeline(buffer) {
+
+
+function updateTimeline(buffer, initial) {
 
     duration = buffer.duration;
     const pixelsPerSecond = width / duration;
 
-    timeline = new wavesUI.core.Timeline(pixelsPerSecond, width);
-    timeline.createTrack($timeline, height, 'main');
+    if (initial) {
+        timeline = new wavesUI.core.Timeline(pixelsPerSecond, width);
+        timeline.createTrack($timeline, height, 'main');
+    }
+    else {
+        timeline.removeLayer(waveformLayer);
+        timeline.removeLayer(cursorLayer);
+        timeline.pixelsPerSecond = pixelsPerSecond;
+        waveformLayer.destroy();
+    }
 
-     waveformLayer = new wavesUI.helpers.WaveformLayer(buffer, {
-        height: height
-    });
-
-     timeContext = new wavesUI.core.LayerTimeContext(timeline.timeContext);
-    cursorLayer.setTimeContext(timeContext);
-    cursorLayer.configureShape(wavesUI.shapes.Cursor, {
-        x: (data) => { return data.position; }
-    }, {
-        color: 'deeppink'
-    });
-
-    timeline.addLayer(waveformLayer, 'main');
-    timeline.addLayer(cursorLayer, 'main');
-
-    timeline.tracks.render();
-    timeline.tracks.update();
-
-    start()
-}
-
-function updateTimeline(buffer) {
-    // timeline.remove($timeline);
-    timeline.removeLayer(waveformLayer);
-    timeline.removeLayer(cursorLayer);
-    duration = buffer.duration;
-    timeline.pixelsPerSecond = width / duration;
-
-     waveformLayer = new wavesUI.helpers.WaveformLayer(buffer, {
+    waveformLayer = new wavesUI.helpers.WaveformLayer(buffer, {
         height: height
     });
 
@@ -340,8 +319,12 @@ function updateTimeline(buffer) {
 
     timeline.tracks.render();
     timeline.tracks.update();
-    start()
+
+    startAnimation();
 }
+
+    
+
 
 
 function initAudio(data) {
