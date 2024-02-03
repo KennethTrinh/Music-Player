@@ -1,11 +1,61 @@
-const wavesAudio = require('waves-audio');
-const wavesUI = require('waves-ui');
-const wavesLoaders = require('waves-loaders');
-
 const EqualizerNode = require('./equalizer');
 
-let audioContext = wavesAudio.audioContext;
-let loader = new wavesLoaders.AudioBufferLoader();
+class AudioPlayer {
+    constructor(audioContext) {
+      this.audioContext = audioContext;
+      this.audioElement = document.getElementById('audio-player');
+      this.sourceNode = this.audioContext.createMediaElementSource(this.audioElement);
+    }
+  
+    loadSong(url) {
+        this.audioElement.src = url;
+    }
+  
+    play() {
+      if (this.audioElement) {
+        this.audioElement.play();
+      }
+    }
+  
+    pause() {
+      if (this.audioElement) {
+        this.audioElement.pause();
+      }
+    }
+  
+    seek(timeInSeconds) {
+      if (this.audioElement) {
+        this.audioElement.currentTime = timeInSeconds;
+      }
+    }
+  
+    get playbackRate() {
+      return this.audioElement ? this.audioElement.playbackRate : null;
+    }
+  
+    set playbackRate(rate) {
+      if (this.audioElement) {
+        this.audioElement.playbackRate = rate;
+      }
+    }
+  
+    get node() {
+      return this.sourceNode;
+    }
+  
+    set node(newNode) {
+      if (this.sourceNode) {
+        this.sourceNode.disconnect();
+      }
+      this.sourceNode = newNode;
+      if (this.sourceNode) {
+        this.sourceNode.connect(this.audioContext.destination);
+      }
+    }
+  }
+
+let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let audioPlayer = new AudioPlayer(audioContext);
 
 let speedFactor = 0.0;
 let pitchFactor = 0.0;
@@ -22,9 +72,7 @@ let playlist = [
 ];
 
 let songIndex = 0;
-let playControl, buffer, playerEngine, 
-    phaseVocoderNode, equalizer, analyser, 
-    timeline, pitchFactorParam;
+let playerEngine, phaseVocoderNode, equalizer, analyser, pitchFactorParam;
 
 async function init() {
     let Playlist= document.getElementsByClassName('playlist')[0];
@@ -44,17 +92,17 @@ async function init() {
 }
 
 async function loadSong(initial){
-    $playButton.classList.add('disabled');
     $forwardButton.classList.add('disabled');
     $backwardButton.classList.add('disabled');
     $("h1").text( playlist[songIndex].name )
     if (audioContext.audioWorklet === undefined) {
-        handleNoWorklet();
+        let $noWorklet = document.querySelector("#no-worklet");
+        $noWorklet.style.display = 'block';
+        let $controls = document.querySelector(".controls");
+        $controls.style.display = 'none';
         return;
     }
-    let wasPlaying = $playButton.dataset.playing;
-    if (playControl)
-        playControl.stop();
+    // let wasPlaying = !initial && !audioPlayer.audioElement.paused;
 
     stopAnimation(); 
 
@@ -65,50 +113,37 @@ async function loadSong(initial){
                     `Limit: ${performance.memory.jsHeapSizeLimit / (1024 * 1024)} MB`);
     }
 
-    //load the audio
-    buffer = await loader.load( playlist[songIndex].path );
-    await setupEngine(buffer);
-    playControl = new wavesAudio.PlayControl(playerEngine);
-    playControl.setLoopBoundaries(0, buffer.duration);
-    playControl.loop = false;
+    audioPlayer.loadSong(playlist[songIndex].path);
+    await setupEngine(initial);
 
     //setting up pitch slider
     pitchFactorParam = phaseVocoderNode.parameters.get('pitchFactor');
     if (!initial){
         let oldPitch = $pitchvalueLabel.innerHTML
         let oldSpeed = $valueLabel.innerHTML;
-        playControl.speed = Math.pow(2, parseFloat(oldSpeed)/12);
-        pitchFactorParam.value = Math.pow(2, 
-                                        (parseFloat(oldPitch) - parseFloat(oldSpeed)) / 12);
+        audioPlayer.playbackRate = Math.pow(2, parseFloat(oldSpeed)/12);
+        pitchFactorParam.value = Math.pow(2, parseFloat(oldPitch)/12);
         equalizer.setGains(oldEqualizer);
     }
 
-    //setup timeline
-    updateTimeline(buffer, initial);
+    startAnimation();
 
-    if (wasPlaying == 'true')
-        playControl.start();
+    if (!initial) 
+        audioPlayer.play();
 
-    $playButton.classList.remove('disabled');
     $forwardButton.classList.remove('disabled');
     $backwardButton.classList.remove('disabled');
 
 }
 
-function handleNoWorklet() {
-    let $noWorklet = document.querySelector("#no-worklet");
-    $noWorklet.style.display = 'block';
-    let $timeline = document.querySelector(".timeline");
-    $timeline.style.display = 'none';
-    let $controls = document.querySelector(".controls");
-    $controls.style.display = 'none';
-}
-
-
-async function setupEngine(buffer) {
-    playerEngine = new wavesAudio.PlayerEngine(buffer);
-    playerEngine.buffer = buffer;
-    playerEngine.cyclic = false;
+async function setupEngine(initial) {
+    if (!initial) {
+        playerEngine.disconnect();
+        phaseVocoderNode.disconnect();
+        equalizer.disconnect();
+        analyser.disconnect();
+    }
+    playerEngine = audioPlayer.node;
 
     await audioContext.audioWorklet.addModule('phase-vocoder.js');
     phaseVocoderNode = new AudioWorkletNode(audioContext, 'phase-vocoder-processor', { outputChannelCount: [2] });
@@ -118,14 +153,12 @@ async function setupEngine(buffer) {
     playerEngine.connect(phaseVocoderNode);
     phaseVocoderNode.connect(equalizer);
     equalizer.connect(analyser);
-    // phaseVocoderNode.connect(analyser);
     analyser.connect(audioContext.destination);
 }
 
 
 let $forwardButton = document.querySelector('#forward');
 let $backwardButton = document.querySelector('#backward');
-let $playButton = document.querySelector('#play-pause');
 
 $forwardButton.addEventListener('click', async ()=>{
     songIndex = (songIndex + 1) % playlist.length;
@@ -142,25 +175,17 @@ $backwardButton.addEventListener('click', async ()=>{
 
 
 
-
-let $playIcon = $playButton.querySelector('.play');
-let $pauseIcon = $playButton.querySelector('.pause');
-$playButton.addEventListener('click', function() {
+let audioElement = audioPlayer.audioElement;
+audioElement.addEventListener('play', function() {
     if (audioContext.state === 'suspended') {
-        audioContext.resume();
+      audioContext.resume();
     }
-    if (this.dataset.playing === 'false') {
-        playControl.start();
-        this.dataset.playing = 'true';
-        $playIcon.style.display = 'none';
-        $pauseIcon.style.display = 'inline';
-    } else if (this.dataset.playing === 'true') {
-        playControl.pause();
-        this.dataset.playing = 'false';
-        $pauseIcon.style.display = 'none';
-        $playIcon.style.display = 'inline';
-    }
-}, false);
+  });
+
+audioElement.addEventListener('ended', function() {
+    songIndex = (songIndex + 1) % playlist.length;
+    loadSong(false);
+});
 
 
 
@@ -168,8 +193,8 @@ let $speedSlider = document.querySelector('#speed');
 let $valueLabel = document.querySelector('#speed-value');
 $speedSlider.addEventListener('input', function() {
     speedFactor = Math.pow(2, parseFloat(this.value)/12);
-    playControl.speed = speedFactor;
-    pitchFactorParam.value = Math.pow(2, (pitchFactor - parseFloat(this.value))/12);
+    // playControl.speed = speedFactor;
+    audioPlayer.playbackRate = speedFactor;
     $valueLabel.innerHTML = this.value;
 }, false);
 
@@ -178,7 +203,7 @@ let $pitchSlider = document.querySelector('#pitch');
 let $pitchvalueLabel = document.querySelector('#pitch-value');
 $pitchSlider.addEventListener('input', function() {
     pitchFactor = this.value;
-    pitchFactorParam.value = Math.pow(2, (parseFloat(this.value) - speedFactor)/12);
+    pitchFactorParam.value = Math.pow(2, parseFloat(this.value)/ 12);
     $pitchvalueLabel.innerHTML = this.value;
 }, false);
 
@@ -200,38 +225,11 @@ $frequencySelect.addEventListener('change', function() {
 }, false);
 
 
-
-
-let duration;
-const height = 200;
-
-let $timeline = document.querySelector('#timeline');
-let width = $timeline.getBoundingClientRect().width;
-
-$timeline.addEventListener('mousedown', (e) => {
-    let rect = $timeline.getBoundingClientRect()
-    let x = e.clientX - rect.left
-    let y = e.clientY - rect.top
-    // console.log("x: " + x + " y: " + y);
-    playControl.seek(x / width * duration);
-}, false);
-
-
-
-let cursorData = { position: 0 };
-let cursorLayer = new wavesUI.core.Layer('entity', cursorData, {
-  height: height
-});
-let waveformLayer, timeContext;
-
 let requestId;
 // cursor animation loop
 async function loop() {
     requestId = undefined;
-    cursorData.position = playControl.currentPosition;
-    timeline.tracks.update(cursorLayer);
 
-    // console.log(playControl.currentPosition );
     let array = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(array);
     let canvas = document.getElementById('canvas'),
@@ -265,10 +263,6 @@ async function loop() {
         ctx.fillStyle = gradient; //set the filllStyle to gradient for a better look
         ctx.fillRect(i * 12 /*meterWidth+gap*/ , cheight - value + capHeight, meterWidth, cheight); //the meter
     }
-    if(playControl.currentPosition > buffer.duration){ // if song ended
-        songIndex = (songIndex + 1) % playlist.length;
-        await loadSong(false);
-    }
 
     startAnimation();
 }
@@ -283,49 +277,6 @@ function stopAnimation() {
        requestId = undefined;
     }
 }
-
-
-
-function updateTimeline(buffer, initial) {
-
-    duration = buffer.duration;
-    const pixelsPerSecond = width / duration;
-
-    if (initial) {
-        timeline = new wavesUI.core.Timeline(pixelsPerSecond, width);
-        timeline.createTrack($timeline, height, 'main');
-    }
-    else {
-        timeline.removeLayer(waveformLayer);
-        timeline.removeLayer(cursorLayer);
-        timeline.pixelsPerSecond = pixelsPerSecond;
-        waveformLayer.destroy();
-    }
-
-    waveformLayer = new wavesUI.helpers.WaveformLayer(buffer, {
-        height: height
-    });
-
-    timeContext = new wavesUI.core.LayerTimeContext(timeline.timeContext);
-    cursorLayer.setTimeContext(timeContext);
-    cursorLayer.configureShape(wavesUI.shapes.Cursor, {
-        x: (data) => { return data.position; }
-    }, {
-        color: 'deeppink'
-    });
-
-    timeline.addLayer(waveformLayer, 'main');
-    timeline.addLayer(cursorLayer, 'main');
-
-    timeline.tracks.render();
-    timeline.tracks.update();
-
-    startAnimation();
-}
-
-    
-
-
 
 function initAudio(data) {
     let audioContext = new AudioContext();

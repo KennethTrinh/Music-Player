@@ -20,21 +20,10 @@
         </div>
         <h1>Real-time web audio pitch-shifter</h1>
         <div id="no-worklet" style="display: none;">Audio Worklet API not supported by you browser, try a recent Chrome version.</div>
-        <div class="timeline" id="timeline"></div>
-        <canvas id="canvas" width="700" height="350"></canvas>
+        <canvas id="canvas" width="700" height="400"></canvas>
         <div class="controls">
-            <button id="backward" aria-checked="false">
-                <span style="font-size: 2em;"><i class="fas fa-backward"></i></span>
-            </button>
-            <button id="play-pause" data-playing="false" role="switch" aria-checked="false">
-                <span class="play" style="font-size: 2em;"><i class="fas fa-play-circle"></i></span>
-                <span class="pause" style="font-size: 2em; display: none;"><i class="fas fa-pause-circle"></i></span>
-            </button>
-            <button id="forward" aria-checked="false">
-                <span style="font-size: 2em;"><i class="fas fa-forward"></i></span>
-            </button>
             <label for="speed">
-                <span>Speed </span>
+                <span>Speed (semitones)</span>
                 <input id="speed" type="range" min="-12" max="12" step="1" />
                 <span id="speed-value">0</span>
             </label>
@@ -48,20 +37,29 @@
                 <input id="equalizer" type="range" min="0" max="50" step="1" value="0" />
                 <span id="equalizer-value">0</span>
             </label>
+            <select id="frequency-select">
+                <option value="32">32 Hz</option>
+                <option value="64">64 Hz</option>
+                <option value="125">125 Hz</option>
+                <option value="250">250 Hz</option>
+                <option value="500">500 Hz</option>
+                <option value="1000">1000 Hz</option>
+                <option value="2000">2000 Hz</option>
+                <option value="4000">4000 Hz</option>
+                <option value="8000">8000 Hz</option>
+                <option value="16000">16000 Hz</option>
+            </select>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <button id="backward" aria-checked="false">
+                <span style="font-size: 2em;"><i class="fas fa-backward"></i></span>
+            </button>
+            <audio id="audio-player" controls></audio>
+            <button id="forward" aria-checked="false">
+                <span style="font-size: 2em;"><i class="fas fa-forward"></i></span>
+            </button>
         </div>
         <input type="file" accept=".mp3,audio/*" onchange="extract(this)" multiple>
-        <select id="frequency-select">
-            <option value="32">32 Hz</option>
-            <option value="64">64 Hz</option>
-            <option value="125">125 Hz</option>
-            <option value="250">250 Hz</option>
-            <option value="500">500 Hz</option>
-            <option value="1000">1000 Hz</option>
-            <option value="2000">2000 Hz</option>
-            <option value="4000">4000 Hz</option>
-            <option value="8000">8000 Hz</option>
-            <option value="16000">16000 Hz</option>
-        </select>
     </div>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="./bundle.js"></script>

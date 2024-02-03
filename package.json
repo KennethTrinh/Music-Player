@@ -29,8 +29,7 @@
     "time",
     "stretch"
   ],
-  "author": "Mano, Gon & Olivier",
-  "license": "The Unlicense",
+  "author": "Ken",
   "dependencies": {
     "fft.js": "^4.0.3"
   },
@@ -40,8 +39,6 @@
     "npm-run-all": "^4.1.5",
     "terser": "^5.5.1",
     "watchify": "^4.0.0",
-    "waves-audio": "^0.5.2",
-    "waves-loaders": "^0.1.5",
     "waves-ui": "github:wavesjs/ui"
   }
 }
