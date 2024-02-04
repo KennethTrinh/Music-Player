@@ -54,55 +54,114 @@ class AudioPlayer {
     }
   }
 
+
+class Song {
+  constructor(id, name, path) {
+    this.id = id;
+    this.name = name;
+    this.path = path;
+  }
+}
+
+class Playlist {
+    constructor(...items) {
+        this.songs = [];
+        this.songIndex = 0;
+        this.repeatSongIndex = null;  
+        for (let song of items) {
+            if (Array.isArray(song) && song.length === 3) {
+              this.addSong(...song);
+            }
+        }
+    }
+
+    addSong(id, name, path) {
+        this.songs.push(new Song(id, name, path));
+    }
+
+    get currentSong() {
+        return this.songs[this.songIndex];
+    }
+
+    set currentSong(songIndex) {
+        this.songIndex = songIndex;
+    }
+
+    get repeatSong() {
+        return this.repeatSongIndex;
+    }
+
+    set repeatSong(songIndex) {
+        this.repeatSongIndex = songIndex;
+    }
+
+    nextSong() {
+        if (this.repeatSongIndex !== null)
+            this.songIndex = this.repeatSongIndex - 1; 
+
+        this.songIndex = (this.songIndex + 1) % this.songs.length;
+        return this.currentSong;
+      }
+
+    previousSong() {
+        if (this.repeatSongIndex !== null)
+            this.songIndex = this.repeatSongIndex + 1;
+
+        this.songIndex--;
+        if (this.songIndex < 0)
+            this.songIndex = this.songs.length - 1;
+        return this.currentSong;
+    }
+
+    deleteSong(songIndex) {
+        if (songIndex < 0 || songIndex >= this.length) {
+            throw new Error('Invalid song index');
+        }
+
+        if (songIndex === this.repeatSongIndex) {
+            this.repeatSongIndex = null;
+        }
+        
+        // if the song to be deleted is before the repeated song, shift the repeated song index
+        if (this.repeatSongIndex !== null && this.repeatSongIndex > songIndex) {
+            this.repeatSongIndex--;
+        }
+
+
+        this.songs.splice(songIndex, 1);
+        // reindex
+        this.songs.forEach((song, index) => {
+            song.id = index;
+        })
+    }
+}
+
+let playlist = new Playlist(
+  [0, 'Mia & Sebastian\'s Theme - Arr. Mercuzio', `music/Mia & Sebastian's Theme - Arr. Mercuzio.mp3`],
+);
+
 let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let audioPlayer = new AudioPlayer(audioContext);
 
 let speedFactor = 0.0;
 let pitchFactor = 0.0;
 
-function Song(id, name, path) {
-  this.id = id;
-  this.name = name;
-  this.path = path;
-}
-
-let playlist = [
-    new Song(0, 'Mia & Sebastian\'s Theme - Arr. Mercuzio', `music/Mia & Sebastian's Theme - Arr. Mercuzio.mp3`),
-
-];
-
-let songIndex = 0;
 let playerEngine, phaseVocoderNode, equalizer, analyser, pitchFactorParam;
-
-async function init() {
-    let Playlist= document.getElementsByClassName('playlist')[0];
-    for (let i=0; i<playlist.length; i++){
-        let div2 = document.createElement('div');
-        div2.className = 'playlist-row';
-        div2.id = playlist[i].id;
-        div2.onclick = async function () {
-                        songIndex = this.id;
-                        await loadSong(false);
-                        };
-        div2.innerHTML = playlist[i].name;
-        Playlist.appendChild(div2);
-    }
-    await loadSong(true);
-
-}
 
 async function loadSong(initial){
     $forwardButton.classList.add('disabled');
     $backwardButton.classList.add('disabled');
-    $("h1").text( playlist[songIndex].name )
     if (audioContext.audioWorklet === undefined) {
-        let $noWorklet = document.querySelector("#no-worklet");
-        $noWorklet.style.display = 'block';
-        let $controls = document.querySelector(".controls");
-        $controls.style.display = 'none';
-        return;
+      let $noWorklet = document.querySelector("#no-worklet");
+      $noWorklet.style.display = 'block';
+      let $controls = document.querySelector(".controls");
+      $controls.style.display = 'none';
+      return;
     }
-    
+    if (playlist.songs.length === 0) {
+      return;
+    }
+    $("h1").text( playlist.currentSong.name );
     stopAnimation(); 
     
     let oldEqualizer = initial ? null : equalizer.getGains();
@@ -112,7 +171,7 @@ async function loadSong(initial){
       `Limit: ${performance.memory.jsHeapSizeLimit / (1024 * 1024)} MB`);
     }
     
-    audioPlayer.loadSong(playlist[songIndex].path);
+    audioPlayer.loadSong(playlist.currentSong.path);
     await setupEngine(initial);
     
     //setting up pitch slider
@@ -160,15 +219,13 @@ let $forwardButton = document.querySelector('#forward');
 let $backwardButton = document.querySelector('#backward');
 
 $forwardButton.addEventListener('click', async ()=>{
-    songIndex = (songIndex + 1) % playlist.length;
+    playlist.nextSong();
     loadSong(false);
 
 });
 
 $backwardButton.addEventListener('click', async ()=>{
-    songIndex--;
-    if (songIndex < 0)
-      songIndex = playlist.length - 1;
+    playlist.previousSong();
     loadSong(false);
 });
 
@@ -182,7 +239,7 @@ audioElement.addEventListener('play', function() {
   });
 
 audioElement.addEventListener('ended', function() {
-    songIndex = (songIndex + 1) % playlist.length;
+    playlist.nextSong();
     loadSong(false);
 });
 
@@ -301,16 +358,64 @@ window.extract = (data) => {
         let file_name = file.name.split('.').slice(0, -1).join('.');
         $.when(initAudio(data)).done(function (b) {
             $('.playlist').append(
-                `<div class=playlist-row id=${playlist.length} onclick="nav(this.id)"> ${file_name} </div>`
+                `<div class=playlist-row id=${playlist.songs.length} onclick="nav(this.id)"> ${file_name} 
+                    <button class="delete-button" onclick="deleteSong(this.parentElement.id); event.stopPropagation();">Delete</button>
+                    <button class="repeat-button" onclick="repeatSong(this.parentElement.id); event.stopPropagation();">Repeat</button>
+                </div>`
             );
-            playlist.push(new Song(playlist.length, file_name, URL.createObjectURL(file)));
+            playlist.addSong(playlist.songs.length, file_name, URL.createObjectURL(file));
         });
     }
 }
 
 window.nav = function (id){
-    songIndex = id;
+    id = parseInt(id);
+    playlist.currentSong = id;
     loadSong(false);
 }
 
-window.addEventListener('load', init);
+window.deleteSong = function (id){
+    id = parseInt(id);
+    playlist.deleteSong(id);
+    $(`#${id}`).remove();
+    $('.playlist-row').each(function(index){
+        $(this).attr('id', index);
+    });
+}
+
+window.repeatSong = function (id){
+    id = parseInt(id);
+    let changeColor = (id, enable) => {
+        let elementDiv = $(`#${id}`);
+        if (enable){
+            elementDiv.css("background-color", "pink");
+        } else {
+          elementDiv.css("background-color", "initial");
+        }
+    }
+
+    if (playlist.repeatSong === id){ // if repeat is already set, unset it
+        changeColor(id, false);
+        playlist.repeatSong = null;
+    } else if (playlist.repeatSong !== null){ // if another repeat is set, unset it
+        changeColor(playlist.repeatSong, false);
+        playlist.repeatSong = id;
+        changeColor(id, true);
+    } else { // set repeat
+        playlist.repeatSong = id;
+        changeColor(id, true);
+    }
+} 
+
+
+window.onload = async function() {
+    for (let i=0; i<playlist.songs.length; i++){
+        $('.playlist').append(
+            `<div class=playlist-row id=${playlist.songs[i].id} onclick="nav(this.id)"> ${playlist.songs[i].name} 
+                <button class="delete-button" onclick="deleteSong(this.parentElement.id); event.stopPropagation();">Delete</button>
+                <button class="repeat-button" onclick="repeatSong(this.parentElement.id); event.stopPropagation();">Repeat</button>
+            </div>`
+        );
+    }
+    await loadSong(true); // load first song
+}

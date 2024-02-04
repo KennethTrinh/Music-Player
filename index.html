@@ -12,7 +12,7 @@
     <script src="//wavesjs.github.io/waves-ui/examples/assets/waves-loaders.min.js"></script>
 
     <!-- <script src="./main.js"></script> -->
-    <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/all.js" integrity="sha384-xymdQtn1n3lH2wcu0qhcdaOpQwyoarkgLVxC/wZ5q7h9gHtxICrpcaSUfygqZGOe" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/111924c1a3.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="wrapper">
@@ -35,29 +35,24 @@
             </label>
             <label for="equalizer">
                 <span>Equalizer gain</span>
-                <input id="equalizer" type="range" min="0" max="50" step="1" value="0" />
+                <input id="equalizer" type="range" min="-50" max="50" step="1" value="0" />
                 <span id="equalizer-value">0</span>
             </label>
             <select id="frequency-select">
-                <option value="32">32 Hz</option>
-                <option value="64">64 Hz</option>
-                <option value="125">125 Hz</option>
-                <option value="250">250 Hz</option>
-                <option value="500">500 Hz</option>
-                <option value="1000">1000 Hz</option>
-                <option value="2000">2000 Hz</option>
-                <option value="4000">4000 Hz</option>
-                <option value="8000">8000 Hz</option>
-                <option value="16000">16000 Hz</option>
+                <option value="60">60 Hz</option>     <!-- Bass -->
+                <option value="250">250 Hz</option>   <!-- Low Midrange -->
+                <option value="1000">1000 Hz</option> <!-- Midrange -->
+                <option value="4000">4000 Hz</option> <!-- Upper Midrange -->
+                <option value="16000">16000 Hz</option> <!-- Treble -->
             </select>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <button id="backward" aria-checked="false">
-                <span style="font-size: 2em;"><i class="fas fa-backward"></i></span>
+                <span style="font-size: 2em;"><i class="fa-solid fa-backward-step"></i></span>
             </button>
             <audio id="audio-player" controls></audio>
             <button id="forward" aria-checked="false">
-                <span style="font-size: 2em;"><i class="fas fa-forward"></i></span>
+                <span style="font-size: 2em;"><i class="fa-solid fa-forward-step"></i></span>
             </button>
         </div>
         <input type="file" accept=".mp3,audio/*" onchange="extract(this)" multiple>

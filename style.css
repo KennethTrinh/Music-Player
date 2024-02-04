@@ -154,6 +154,11 @@ input[type=range]:focus::-moz-range-track {
     background: #ccc;
 }
 
-#frequency-select {
+.delete-button, .repeat-button {
+    display: none;
+}
 
+.playlist-row:hover .delete-button,
+.playlist-row:hover .repeat-button {
+    display: inline-block;
 }

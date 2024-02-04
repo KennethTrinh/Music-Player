@@ -4,15 +4,10 @@ class EqualizerNode extends GainNode {
         this.audioContext = audioContext;
         // Define your equalizer bands
         const equalizerBands = [
-            { f: 32, type: 'lowshelf' },
-            { f: 64, type: 'peaking' },
-            { f: 125, type: 'peaking' },
+            { f: 60, type: 'lowshelf' },
             { f: 250, type: 'peaking' },
-            { f: 500, type: 'peaking' },
             { f: 1000, type: 'peaking' },
-            { f: 2000, type: 'peaking' },
             { f: 4000, type: 'peaking' },
-            { f: 8000, type: 'peaking' },
             { f: 16000, type: 'highshelf' }
         ];
         // Create your biquad filters
