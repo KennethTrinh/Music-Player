@@ -162,3 +162,66 @@ input[type=range]:focus::-moz-range-track {
 .playlist-row:hover .repeat-button {
     display: inline-block;
 }
+
+body .sound-wave {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body .bar {
+  animation-name: wave-lg;
+  animation-iteration-count: infinite;
+  /* animation-timing-function: ease-in-out;
+   */
+   transition: height 0.1s ease-in-out;
+  animation-direction: alternate;
+  background: pink;
+  margin: 0 1.5px;
+  height: 2px;
+  width: 3%;
+}
+
+body .bar:nth-child(-n + 10),
+body .bar:nth-last-child(-n + 10) {
+  animation-name: wave-md;
+}
+
+body .bar:nth-child(-n + 10),
+body .bar:nth-last-child(-n + 10) {
+  animation-name: wave-sm;
+}
+
+@keyframes wave-sm {
+  0% {
+    opacity: 0.35;
+    height: 10px;
+  }
+  100% {
+    opacity: 1;
+    height: 25px;
+  }
+}
+
+@keyframes wave-md {
+  0% {
+    opacity: 0.35;
+    height: 15px;
+  }
+  100% {
+    opacity: 1;
+    height: 50px;
+  }
+}
+
+@keyframes wave-lg {
+  0% {
+    opacity: 0.35;
+    height: 15px;
+  }
+  100% {
+    opacity: 1;
+    height: 70px;
+  }
+}

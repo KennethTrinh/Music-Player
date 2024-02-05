@@ -198,12 +198,86 @@ class Playlist {
     }
 }
 
+class AnimationUI {
+    constructor() {
+        this.requestId = undefined;
+        // frequency domain
+        this.canvas = document.getElementById('canvas');
+        this.cwidth = this.canvas.width;
+        this.cheight = this.canvas.height - 2;
+        this.meterWidth = 10; // width of the meters in the spectrum
+        this.capHeight = 2;
+        this.capStyle = '#fff';
+        this.meterNum = 800 / (10 + 2); // count of the meters
+        this.capYPositionArray = []; // store the vertical position of hte caps for the preivous frame
+        this.ctx = this.canvas.getContext('2d');
+        this.gradient = this.ctx.createLinearGradient(0, 0, 0, 300);
+        this.gradient.addColorStop(1, '#FF0099');
+        this.gradient.addColorStop(0.5, '#FF00FF');
+        this.gradient.addColorStop(0, '#FF99FF');
+        this.frequncyDomain = new Uint8Array(1024);
+
+        // time domain
+        this.bars = document.querySelectorAll('.bar');
+        this.timeDomain = new Float32Array(1024);
+        this.loop = this.loop.bind(this);
+    }
+
+
+    startAnimation() {
+        if (!this.requestId)
+            this.requestId = requestAnimationFrame(this.loop);
+    }
+
+    stopAnimation() {
+        if (this.requestId) {
+            cancelAnimationFrame(this.requestId);
+            this.requestId = undefined;
+        }
+    }
+
+    async loop() {
+        this.requestId = undefined;
+        let step = Math.round(this.frequncyDomain.length / this.meterNum); // sample limited data from the total array
+        analyser.getByteFrequencyData(this.frequncyDomain);
+        this.ctx.clearRect(0, 0, this.cwidth, this.cheight);
+        for (let i = 0; i < this.meterNum; i++) {
+            let value = this.frequncyDomain[i * step];
+            if (this.capYPositionArray.length < Math.round(this.meterNum)) {
+                this.capYPositionArray.push(value);
+            }
+            this.ctx.fillStyle = this.capStyle;
+            // draw the cap, with transition effect
+            if (value < this.capYPositionArray[i]) {
+                this.ctx.fillRect(i * 12, this.cheight - (--this.capYPositionArray[i]), this.meterWidth, this.capHeight);
+            } else {
+                this.ctx.fillRect(i * 12, this.cheight - value, this.meterWidth, this.capHeight);
+                this.capYPositionArray[i] = value;
+            }
+            this.ctx.fillStyle = this.gradient; // set the filllStyle to gradient for a better look
+            this.ctx.fillRect(i * 12 /*meterWidth+gap*/ , this.cheight - value + this.capHeight, this.meterWidth, this.cheight); // the meter
+        }
+
+        analyser.getFloatTimeDomainData(this.timeDomain);
+        this.bars.forEach((bar, i) => {
+            let index = Math.floor(i * (this.timeDomain.length / this.bars.length));
+            const scaledHeight = (this.timeDomain[index]) * 1e3; // Change 100 to the maximum height you want
+            bar.style.height = `${scaledHeight}%`;
+        });
+    
+        this.startAnimation();
+    }
+
+
+}
+
 let playlist = new Playlist(
   [0, 'Mia & Sebastian\'s Theme - Arr. Mercuzio', `music/Mia & Sebastian's Theme - Arr. Mercuzio.mp3`],
 );
 
 let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let audioPlayer = new AudioPlayer(audioContext);
+let animationUI = new AnimationUI();
 
 let speedFactor = 0.0;
 let pitchFactor = 0.0;
@@ -224,7 +298,7 @@ async function loadSong(initial){
       return;
     }
     $("h1").text( playlist.currentSong.name );
-    stopAnimation(); 
+    animationUI.stopAnimation();
     
     let oldEqualizer = initial ? null : equalizer.getGains();
     if (window.performance && performance.memory) {
@@ -246,7 +320,7 @@ async function loadSong(initial){
         equalizer.setGains(oldEqualizer);
     }
 
-    startAnimation();
+    animationUI.startAnimation();
 
     if (!initial) 
         audioPlayer.play();
@@ -343,59 +417,6 @@ $frequencySelect.addEventListener('change', function() {
 }, false);
 
 
-let requestId;
-// cursor animation loop
-async function loop() {
-    requestId = undefined;
-
-    let array = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(array);
-    let canvas = document.getElementById('canvas'),
-        cwidth = canvas.width,
-        cheight = canvas.height - 2,
-        meterWidth = 10, //width of the meters in the spectrum
-        capHeight = 2,
-        capStyle = '#fff',
-        meterNum = 800 / (10 + 2), //count of the meters
-        capYPositionArray = [],////store the vertical position of hte caps for the preivous frame
-        ctx = canvas.getContext('2d'),
-    gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(1, '#FF0099');
-    gradient.addColorStop(0.5, '#FF00FF');
-    gradient.addColorStop(0, '#FF99FF');
-    let step = Math.round(array.length / meterNum); //sample limited data from the total array
-    ctx.clearRect(0, 0, cwidth, cheight);
-    for (let i = 0; i < meterNum; i++) {
-        let value = array[i * step];
-        if (capYPositionArray.length < Math.round(meterNum)) {
-            capYPositionArray.push(value);
-        };
-        ctx.fillStyle = capStyle;
-        //draw the cap, with transition effect
-        if (value < capYPositionArray[i]) {
-            ctx.fillRect(i * 12, cheight - (--capYPositionArray[i]), meterWidth, capHeight);
-        } else {
-            ctx.fillRect(i * 12, cheight - value, meterWidth, capHeight);
-            capYPositionArray[i] = value;
-        };
-        ctx.fillStyle = gradient; //set the filllStyle to gradient for a better look
-        ctx.fillRect(i * 12 /*meterWidth+gap*/ , cheight - value + capHeight, meterWidth, cheight); //the meter
-    }
-
-    startAnimation();
-}
-
-function startAnimation(){
-    if (!requestId)
-        requestId = requestAnimationFrame(loop);
-}
-function stopAnimation() {
-    if (requestId) {
-       cancelAnimationFrame(requestId);
-       requestId = undefined;
-    }
-}
-
 function initAudio(data) {
     let audioContext = new AudioContext();
     let audioRequest = new XMLHttpRequest();
@@ -471,6 +492,10 @@ window.repeatSong = function (id){
 
 
 window.onload = async function() {
+    $('.sound-wave').append(
+        Array.from({length: 100}, () => $('<div>').addClass('bar'))
+    );
+    animationUI.bars = document.querySelectorAll('.bar');
     for (let i=0; i<playlist.songs.length; i++){
         $('.playlist').append(
             `<div class=playlist-row id=${playlist.songs[i].id} onclick="nav(this.id)"> ${playlist.songs[i].name} 
