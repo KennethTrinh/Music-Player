@@ -4,18 +4,23 @@ class EqualizerNode extends GainNode {
         this.audioContext = audioContext;
         // Define your equalizer bands
         const equalizerBands = [
-            { f: 60, type: 'lowshelf' },
-            { f: 250, type: 'peaking' },
-            { f: 1000, type: 'peaking' },
-            { f: 4000, type: 'peaking' },
-            { f: 16000, type: 'highshelf' }
+            { name: 'Sub-bass', range: [20, 60] },           
+            { name: 'Bass', range: [60, 250] },              
+            { name: 'Low midrange', range: [250, 500] },     
+            { name: 'Midrange', range: [500, 2000] },        
+            { name: 'Upper midrange', range: [2000, 4000] }, 
+            { name: 'Presence', range: [4000, 6000] },       
+            { name: 'Brilliance', range: [6000, 8000] },     
+            { name: 'Air', range: [8000, 12000] },           
+            { name: 'High frequencies', range: [12000, 20000] } 
         ];
         // Create your biquad filters
         this.biquads = equalizerBands.map((band) => {
             const biquad = this.audioContext.createBiquadFilter();
-            biquad.type = band.type;
-            biquad.frequency.value = band.f;
+            biquad.type = 'peaking'
+            biquad.frequency.value = (band.range[0] + band.range[1]) / 2;
             biquad.gain.value = 0;
+            biquad.Q.value = 1;
             return biquad;
         });
         // Connect the biquads

@@ -38,20 +38,14 @@ path {
 
 .controls {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: space-between;
 }
 
-.controls #play-pause {
-    /* margin-right: auto; */
-}
-
-.controls #backward {
-    /* margin-right: auto; */
-}
-
-.controls #forward {
-    margin-right: auto;
+#frequency-select {
+    height: auto;
+    margin: 10px 0;
 }
 
 .controls label {
@@ -69,7 +63,7 @@ path {
 }
 
 input[type="range"] {
-  width:250px;
+  width:300px;
 }
 
 #no-worklet {
@@ -95,9 +89,9 @@ input[type="range"] {
 
 /* webkit */
 
- input[type=range]{
+input[type=range]{
     -webkit-appearance: none;
-    width: 200px;
+    width: 300px;
     display: block;
 }
 
