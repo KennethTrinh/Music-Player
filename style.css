@@ -72,19 +72,67 @@ input[type="range"] {
     font-weight: bold;
 }
 
+:root {
+  --button-height: 20px; /* Adjust as needed */
+  --playlist-row-height: 40px; /* Adjust as needed */
+}
+
+.playlist-text {
+  position:absolute;
+  top:0;
+  left:0;
+
+  margin-bottom: 2px;
+}
 .playlist {
     position:absolute;
     top:0;
     left:0;
-    z-index:1;
+    margin-top: 1.5%;
+    margin-left: 0.5%;
     .playlist-row{
         display: block;
         margin: 10px 0;
         width: 100%;
+        background-color: #FF0099;
+        border-radius: 5px;
+        padding: 10px;
     }
+    overflow-y: auto;
+    max-height: calc(55px * 5);
 }
+
+.playlist-row {
+  position: relative; /* This is needed for absolute positioning of child elements */
+  transition: height 0.3s ease; 
+  height: var(--playlist-row-height);
+  cursor: pointer;
+}
+.delete-button, .repeat-button {
+  position: absolute;
+  bottom: 0;
+  height: var(--button-height);
+  display: none;
+  border: none;
+  background-color: #67003e;
+  color: white;
+  
+}
+.delete-button {
+  left: 0;
+}
+.repeat-button {
+  right: 0;
+}
+
 .playlist-row:hover {
-      text-decoration: underline;
+  font-weight: bold;
+  height: calc(var(--button-height) + var(--playlist-row-height)); /* This is the height of the row when hovered */
+}
+
+.playlist-row:hover .delete-button,
+.playlist-row:hover .repeat-button {
+    display: inline-block;
 }
 
 /* webkit */
@@ -152,10 +200,7 @@ input[type=range]:focus::-moz-range-track {
     display: none;
 }
 
-.playlist-row:hover .delete-button,
-.playlist-row:hover .repeat-button {
-    display: inline-block;
-}
+/* Amplitide Spectrum */
 
 body .sound-wave {
   height: 50px;

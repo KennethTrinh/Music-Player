@@ -478,7 +478,7 @@ window.repeatSong = function (id){
         if (enable){
             elementDiv.css("background-color", "pink");
         } else {
-          elementDiv.css("background-color", "initial");
+          elementDiv.css("background-color", "#FF0099");
         }
     }
 
