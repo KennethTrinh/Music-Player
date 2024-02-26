@@ -18,7 +18,7 @@
             <h1>Pitch shifter</h1>
             <div id="no-worklet" style="display: none;">Audio Worklet API not supported by you browser, try a recent Chrome version.</div>
             <div class="sound-wave"> </div>
-            <canvas id="canvas" width="700" height="400"></canvas>
+            <canvas id="canvas" ></canvas>
             <div class="controls">
                 <div style="display: flex;">
                     <label for="speed">
@@ -50,18 +50,18 @@
                         <option value="16000">High frequencies (12000 Hz - 20000 Hz)</option>
                     </select>
                 </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <input type="file" accept=".mp3,audio/*" onchange="extract(this)" multiple>
+                    <button id="backward" aria-checked="false">
+                        <span style="font-size: 2em;"><i class="fa-solid fa-backward-step"></i></span>
+                    </button>
+                    <audio id="audio-player" controls></audio>
+                    <button id="forward" aria-checked="false">
+                        <span style="font-size: 2em;"><i class="fa-solid fa-forward-step"></i></span>
+                    </button>
+                </div>
             </div>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <button id="backward" aria-checked="false">
-                <span style="font-size: 2em;"><i class="fa-solid fa-backward-step"></i></span>
-            </button>
-            <audio id="audio-player" controls></audio>
-            <button id="forward" aria-checked="false">
-                <span style="font-size: 2em;"><i class="fa-solid fa-forward-step"></i></span>
-            </button>
-        </div>
-        <input type="file" accept=".mp3,audio/*" onchange="extract(this)" multiple>
     </div>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="./dist/bundle.js"></script>

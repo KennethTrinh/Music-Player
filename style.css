@@ -6,6 +6,13 @@
     unicode-range: u+0000,u+000d,u+0020,u+0030-0039,u+00a0,u+00a4,u+00b6-00b7,u+01c4-01c6,u+01f1-01f3,u+02bb-02bc,u+05b0-05c4,u+05d0-05ea,u+05f0-05f4,u+200e-200f,u+20aa,u+fb2a-fb36,u+fb38-fb3c,u+fb3e,u+fb40-fb41,u+fb43-fb44,u+fb46-fb4f,u+ffff
 }
 
+:root {
+  --button-height: 20px;
+  --playlist-row-height: 8vh; 
+  --playlist-row-width: 20vw;
+  --element-spacing: 10vw;
+  --main-area-width: 60vw;
+}
 
 *, *:before, *:after {
     box-sizing: border-box;
@@ -16,6 +23,7 @@ html, body {
 }
 
 h1 {
+  margin-top: -5vh;
   word-wrap: break-word;
 }
 
@@ -43,6 +51,7 @@ path {
 }
 
 .controls {
+    width: var(--main-area-width);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -72,13 +81,6 @@ path {
     text-align: center;
     font-size: 1.1em;
     font-weight: bold;
-}
-
-:root {
-  --button-height: 20px;
-  --playlist-row-height: 8vh; 
-  --playlist-row-width: 20vw;
-  --element-spacing: 100px;
 }
 
 .music-player {
@@ -153,7 +155,7 @@ path {
 
 input[type=range]{
     -webkit-appearance: none;
-    width: 300px;
+    width: 25vw;
     display: block;
 }
 
@@ -217,64 +219,24 @@ input[type=range]:focus::-moz-range-track {
 /* Amplitide Spectrum */
 
 body .sound-wave {
-  height: 50px;
+  height: 10vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 8vh;
+  width: var(--main-area-width);
 }
 
 body .bar {
   animation-name: wave-lg;
   animation-iteration-count: infinite;
-  /* animation-timing-function: ease-in-out;
-   */
+  animation-timing-function: ease-in-out;
+  
    transition: height 0.1s ease-in-out;
   animation-direction: alternate;
   background: pink;
   margin: 0 1.5px;
-  height: 2px;
-  width: 3%;
+  height: 5vh;
+  width: 2%;
 }
 
-body .bar:nth-child(-n + 10),
-body .bar:nth-last-child(-n + 10) {
-  animation-name: wave-md;
-}
-
-body .bar:nth-child(-n + 10),
-body .bar:nth-last-child(-n + 10) {
-  animation-name: wave-sm;
-}
-
-@keyframes wave-sm {
-  0% {
-    opacity: 0.35;
-    height: 10px;
-  }
-  100% {
-    opacity: 1;
-    height: 25px;
-  }
-}
-
-@keyframes wave-md {
-  0% {
-    opacity: 0.35;
-    height: 15px;
-  }
-  100% {
-    opacity: 1;
-    height: 50px;
-  }
-}
-
-@keyframes wave-lg {
-  0% {
-    opacity: 0.35;
-    height: 15px;
-  }
-  100% {
-    opacity: 1;
-    height: 70px;
-  }
-}

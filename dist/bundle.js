@@ -206,14 +206,24 @@ class Playlist {
 class AnimationUI {
     constructor() {
         this.requestId = undefined;
-        // frequency domain
+        window.addEventListener('resize', this.canvasFreqUpdate.bind(this));
+        this.canvasFreqUpdate();
+
+        // time domain
+        this.bars = document.querySelectorAll('.bar');
+        this.timeDomain = new Float32Array(1024);
+        this.loop = this.loop.bind(this);
+    }
+    canvasFreqUpdate() {
         this.canvas = document.getElementById('canvas');
+        this.canvas.width = window.innerWidth * 0.60;
+        this.canvas.height = window.innerHeight * 0.5;
         this.cwidth = this.canvas.width;
         this.cheight = this.canvas.height - 2;
-        this.meterWidth = 10; // width of the meters in the spectrum
-        this.capHeight = 2;
+        this.meterNum = 80;
+        this.meterWidth = this.cwidth / (this.meterNum + (this.canvas.width * 0.01));
+        this.capHeight = 3;
         this.capStyle = '#fff';
-        this.meterNum = 800 / (10 + 2); // count of the meters
         this.capYPositionArray = []; // store the vertical position of hte caps for the preivous frame
         this.ctx = this.canvas.getContext('2d');
         this.gradient = this.ctx.createLinearGradient(0, 0, 0, 300);
@@ -221,11 +231,7 @@ class AnimationUI {
         this.gradient.addColorStop(0.5, '#FF00FF');
         this.gradient.addColorStop(0, '#FF99FF');
         this.frequncyDomain = new Uint8Array(1024);
-
-        // time domain
-        this.bars = document.querySelectorAll('.bar');
-        this.timeDomain = new Float32Array(1024);
-        this.loop = this.loop.bind(this);
+        console.log(this.cwidth, this.cheight, this.meterNum);
     }
 
 
@@ -247,7 +253,7 @@ class AnimationUI {
         analyser.getByteFrequencyData(this.frequncyDomain);
         this.ctx.clearRect(0, 0, this.cwidth, this.cheight);
         for (let i = 0; i < this.meterNum; i++) {
-            let value = this.frequncyDomain[i * step];
+            let value = this.frequncyDomain[i * step] * (this.cheight * 0.0040);
             if (this.capYPositionArray.length < Math.round(this.meterNum)) {
                 this.capYPositionArray.push(value);
             }
@@ -282,7 +288,7 @@ let playlist = new Playlist(
 
 let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let audioPlayer = new AudioPlayer(audioContext);
-let animationUI = new AnimationUI();
+let animationUI;
 
 let speedFactor = 0.0;
 let pitchFactor = 0.0;
@@ -497,10 +503,7 @@ window.repeatSong = function (id){
 
 
 window.onload = async function() {
-    $('.sound-wave').append(
-        Array.from({length: 100}, () => $('<div>').addClass('bar'))
-    );
-    animationUI.bars = document.querySelectorAll('.bar');
+
     for (let i=0; i<playlist.songs.length; i++){
         $('.playlist').append(
             `<div class=playlist-row id=${playlist.songs[i].id} onclick="nav(this.id)"> ${playlist.songs[i].name} 
@@ -509,6 +512,12 @@ window.onload = async function() {
             </div>`
         );
     }
+    animationUI = new AnimationUI();
+    $('.sound-wave').append(
+        Array.from({length: 100}, () => $('<div>').addClass('bar'))
+    );
+    animationUI.bars = document.querySelectorAll('.bar');
     await loadSong(true); // load first song
+
 }
 },{"./equalizer":1}]},{},[2]);
