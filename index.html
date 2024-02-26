@@ -14,40 +14,42 @@
             <strong> My Hopeless Romantic Playlist </strong>
         </div>
         <div class="playlist"></div>
-        <h1>Real-time web audio pitch-shifter</h1>
-        <div id="no-worklet" style="display: none;">Audio Worklet API not supported by you browser, try a recent Chrome version.</div>
-        <div class="sound-wave"> </div>
-        <canvas id="canvas" width="700" height="400"></canvas>
-        <div class="controls">
-            <div style="display: flex;">
-                <label for="speed">
-                    <span>Speed (semitones)</span>
-                    <input id="speed" type="range" min="-12" max="12" step="1" />
-                    <span id="speed-value">0</span>
-                </label>
-                <label for="pitch">
-                    <span>Pitch (semitones)</span>
-                    <input id="pitch" type="range" min="-12" max="12" step="1" />
-                    <span id="pitch-value">0</span>
-                </label>
-            </div>
-            <div style="display: flex;">
-                <label for="equalizer">
-                    <span>Equalizer gain</span>
-                    <input id="equalizer" type="range" min="-50" max="50" step="1" value="0" />
-                    <span id="equalizer-value">0</span>
-                </label>
-                <select id="frequency-select">
-                    <option value="40">Sub-bass (20 Hz - 60 Hz)</option>
-                    <option value="155">Bass (60 Hz - 250 Hz)</option>
-                    <option value="375">Low Midrange (250 Hz - 500 Hz)</option>
-                    <option value="1250">Midrange (500 Hz - 2000 Hz)</option>
-                    <option value="3000">Upper Midrange (2000 Hz - 4000 Hz)</option>
-                    <option value="5000">Presence (4000 Hz - 6000 Hz)</option>
-                    <option value="7000">Brilliance (6000 Hz - 8000 Hz)</option>
-                    <option value="10000">Air (8000 Hz - 12000 Hz)</option>
-                    <option value="16000">High frequencies (12000 Hz - 20000 Hz)</option>
-                </select>
+        <div class="music-player">
+            <h1>Pitch shifter</h1>
+            <div id="no-worklet" style="display: none;">Audio Worklet API not supported by you browser, try a recent Chrome version.</div>
+            <div class="sound-wave"> </div>
+            <canvas id="canvas" width="700" height="400"></canvas>
+            <div class="controls">
+                <div style="display: flex;">
+                    <label for="speed">
+                        <span>Speed (semitones)</span>
+                        <input id="speed" type="range" min="-12" max="12" step="1" />
+                        <span id="speed-value">0</span>
+                    </label>
+                    <label for="pitch">
+                        <span>Pitch (semitones)</span>
+                        <input id="pitch" type="range" min="-12" max="12" step="1" />
+                        <span id="pitch-value">0</span>
+                    </label>
+                </div>
+                <div style="display: flex;">
+                    <label for="equalizer">
+                        <span>Equalizer gain</span>
+                        <input id="equalizer" type="range" min="-50" max="50" step="1" value="0" />
+                        <span id="equalizer-value">0</span>
+                    </label>
+                    <select id="frequency-select">
+                        <option value="40">Sub-bass (20 Hz - 60 Hz)</option>
+                        <option value="155">Bass (60 Hz - 250 Hz)</option>
+                        <option value="375">Low Midrange (250 Hz - 500 Hz)</option>
+                        <option value="1250">Midrange (500 Hz - 2000 Hz)</option>
+                        <option value="3000">Upper Midrange (2000 Hz - 4000 Hz)</option>
+                        <option value="5000">Presence (4000 Hz - 6000 Hz)</option>
+                        <option value="7000">Brilliance (6000 Hz - 8000 Hz)</option>
+                        <option value="10000">Air (8000 Hz - 12000 Hz)</option>
+                        <option value="16000">High frequencies (12000 Hz - 20000 Hz)</option>
+                    </select>
+                </div>
             </div>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center;">

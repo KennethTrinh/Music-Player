@@ -6,12 +6,17 @@
     unicode-range: u+0000,u+000d,u+0020,u+0030-0039,u+00a0,u+00a4,u+00b6-00b7,u+01c4-01c6,u+01f1-01f3,u+02bb-02bc,u+05b0-05c4,u+05d0-05ea,u+05f0-05f4,u+200e-200f,u+20aa,u+fb2a-fb36,u+fb38-fb3c,u+fb3e,u+fb40-fb41,u+fb43-fb44,u+fb46-fb4f,u+ffff
 }
 
+
 *, *:before, *:after {
     box-sizing: border-box;
 }
 
 html, body {
     height: 100%;
+}
+
+h1 {
+  word-wrap: break-word;
 }
 
 body {
@@ -25,6 +30,7 @@ body {
 
 div {
     color: white;
+    max-width: 65vw;
 }
 
 path {
@@ -62,10 +68,6 @@ path {
   pointer-events: none;
 }
 
-input[type="range"] {
-  width:300px;
-}
-
 #no-worklet {
     text-align: center;
     font-size: 1.1em;
@@ -73,8 +75,14 @@ input[type="range"] {
 }
 
 :root {
-  --button-height: 20px; /* Adjust as needed */
-  --playlist-row-height: 40px; /* Adjust as needed */
+  --button-height: 20px;
+  --playlist-row-height: 8vh; 
+  --playlist-row-width: 20vw;
+  --element-spacing: 100px;
+}
+
+.music-player {
+  margin-left: var(--element-spacing);
 }
 
 .playlist-text {
@@ -90,24 +98,29 @@ input[type="range"] {
     left:0;
     margin-top: 1.5%;
     margin-left: 0.5%;
-    .playlist-row{
-        display: block;
-        margin: 10px 0;
-        width: 100%;
-        background-color: #FF0099;
-        border-radius: 5px;
-        padding: 10px;
-    }
+    margin-right: var(--element-spacing);
     overflow-y: auto;
-    max-height: calc(55px * 5);
+    max-height: 80vh;
 }
 
 .playlist-row {
+  display: block;
+  margin: 1vh 0;
+  background-color: #FF0099;
+  border-radius: 10px;
+  padding: 1vh;
+
   position: relative; /* This is needed for absolute positioning of child elements */
   transition: height 0.3s ease; 
   height: var(--playlist-row-height);
   cursor: pointer;
+  overflow-wrap: break-word; 
+  overflow: hidden; 
+  width: var(--playlist-row-width);
+  max-width: 500px;
+  margin-bottom: 2px;
 }
+
 .delete-button, .repeat-button {
   position: absolute;
   bottom: 0;
@@ -128,6 +141,7 @@ input[type="range"] {
 .playlist-row:hover {
   font-weight: bold;
   height: calc(var(--button-height) + var(--playlist-row-height)); /* This is the height of the row when hovered */
+  white-space: normal;
 }
 
 .playlist-row:hover .delete-button,
