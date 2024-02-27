@@ -164,7 +164,6 @@ class AnimationUI {
         this.gradient.addColorStop(0.5, '#FF00FF');
         this.gradient.addColorStop(0, '#FF99FF');
         this.frequncyDomain = new Uint8Array(1024);
-        console.log(this.cwidth, this.cheight, this.meterNum);
     }
 
 
@@ -221,7 +220,7 @@ let playlist = new Playlist(
 
 let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let audioPlayer = new AudioPlayer(audioContext);
-let animationUI;
+let animationUI = new AnimationUI();
 
 let speedFactor = 0.0;
 let pitchFactor = 0.0;
@@ -229,8 +228,6 @@ let pitchFactor = 0.0;
 let playerEngine, phaseVocoderNode, equalizer, analyser, pitchFactorParam;
 
 async function loadSong(initial){
-    $forwardButton.classList.add('disabled');
-    $backwardButton.classList.add('disabled');
     if (audioContext.audioWorklet === undefined) {
       let $noWorklet = document.querySelector("#no-worklet");
       $noWorklet.style.display = 'block';
@@ -269,9 +266,6 @@ async function loadSong(initial){
     if (!initial) 
         audioPlayer.play();
 
-    $forwardButton.classList.remove('disabled');
-    $backwardButton.classList.remove('disabled');
-
 }
 
 async function setupEngine(initial) {
@@ -294,22 +288,28 @@ async function setupEngine(initial) {
     analyser.connect(audioContext.destination);
 }
 
+document.addEventListener('keydown', (event) => {
+    const keyName = event.key;
 
-let $forwardButton = document.querySelector('#forward');
-let $backwardButton = document.querySelector('#backward');
-
-$forwardButton.addEventListener('click', async ()=>{
-    playlist.nextSong();
-    loadSong(false);
-
+    if (keyName === 'ArrowRight') {
+        playlist.nextSong();
+        loadSong(false);
+    } else if (keyName === 'ArrowLeft') {
+        playlist.previousSong();
+        loadSong(false);
+    } else if (keyName === 'r') {
+        let id = playlist.currentSong.id;
+        window.repeatSong(id);
+    } else if (keyName === 'p') {
+        if (audioPlayer.audioElement.paused) {
+            audioPlayer.play();
+        } else {
+            audioPlayer.pause();
+        }
+    } else if (keyName === 'f') {
+        document.querySelector('input[type="file"]').click();
+    }
 });
-
-$backwardButton.addEventListener('click', async ()=>{
-    playlist.previousSong();
-    loadSong(false);
-});
-
-
 
 let audioElement = audioPlayer.audioElement;
 audioElement.addEventListener('play', function() {
@@ -445,7 +445,6 @@ window.onload = async function() {
             </div>`
         );
     }
-    animationUI = new AnimationUI();
     $('.sound-wave').append(
         Array.from({length: 100}, () => $('<div>').addClass('bar'))
     );
