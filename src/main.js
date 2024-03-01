@@ -292,14 +292,31 @@ document.addEventListener('keydown', (event) => {
     const keyName = event.key;
 
     if (keyName === 'ArrowRight') {
+        event.preventDefault();
         playlist.nextSong();
         loadSong(false);
     } else if (keyName === 'ArrowLeft') {
+        event.preventDefault();
         playlist.previousSong();
         loadSong(false);
+    } else if (keyName === 'ArrowUp') {
+        event.preventDefault();
+        pitchFactor = parseFloat($pitchvalueLabel.innerHTML) + 1;
+        pitchFactorParam.value = Math.pow(2, pitchFactor / 12);
+        $pitchSlider.value = pitchFactor;
+        $pitchvalueLabel.innerHTML = pitchFactor;
+    } else if (keyName === 'ArrowDown') {
+        event.preventDefault();
+        pitchFactor = parseFloat($pitchvalueLabel.innerHTML) - 1;
+        pitchFactorParam.value = Math.pow(2, pitchFactor / 12);
+        $pitchSlider.value = pitchFactor;
+        $pitchvalueLabel.innerHTML = pitchFactor;
     } else if (keyName === 'r') {
         let id = playlist.currentSong.id;
         window.repeatSong(id);
+    } else if (keyName === 'd') {
+        let id = playlist.currentSong.id;
+        window.deleteSong(id);
     } else if (keyName === 'p') {
         if (audioPlayer.audioElement.paused) {
             audioPlayer.play();

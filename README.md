@@ -24,7 +24,13 @@ This application supports the following keyboard controls for ease of use:
 
 - **ArrowLeft**: Pressing the left arrow key will go back to the previous song in the playlist.
 
+- **ArrowUp**: Pressing the up arrow key will increase the pitch factor of the current song by 1.
+
+- **ArrowDown**: Pressing the down arrow key will decrease the pitch factor of the current song by 1.
+
 - **r**: Pressing the 'r' key will repeat the current song. The song ID is used to identify which song to repeat.
+
+- **d**: Pressing the 'd' key will delete the current song from the playlist. The song ID is used to identify which song to delete.
 
 - **p**: Pressing the 'p' key will play or pause the current song, depending on its current state.
 
