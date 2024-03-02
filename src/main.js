@@ -291,21 +291,21 @@ async function setupEngine(initial) {
 document.addEventListener('keydown', (event) => {
     const keyName = event.key;
 
-    if (keyName === 'ArrowRight') {
+    if (keyName === 'ArrowDown') {
         event.preventDefault();
         playlist.nextSong();
         loadSong(false);
-    } else if (keyName === 'ArrowLeft') {
+    } else if (keyName === 'ArrowUp') {
         event.preventDefault();
         playlist.previousSong();
         loadSong(false);
-    } else if (keyName === 'ArrowUp') {
+    } else if (keyName === 'ArrowRight') {
         event.preventDefault();
         pitchFactor = parseFloat($pitchvalueLabel.innerHTML) + 1;
         pitchFactorParam.value = Math.pow(2, pitchFactor / 12);
         $pitchSlider.value = pitchFactor;
         $pitchvalueLabel.innerHTML = pitchFactor;
-    } else if (keyName === 'ArrowDown') {
+    } else if (keyName === 'ArrowLeft') {
         event.preventDefault();
         pitchFactor = parseFloat($pitchvalueLabel.innerHTML) - 1;
         pitchFactorParam.value = Math.pow(2, pitchFactor / 12);

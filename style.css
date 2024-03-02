@@ -12,6 +12,7 @@
   --playlist-row-width: 20vw;
   --element-spacing: 10vw;
   --main-area-width: 60vw;
+  --playlist-border-radius: 10px;
 }
 
 *, *:before, *:after {
@@ -87,29 +88,43 @@ path {
   margin-left: var(--element-spacing);
 }
 
-.playlist-text {
-  position:absolute;
-  top:0;
-  left:0;
+.playlist-container {
+  position: absolute;
+  top: 0;
+  left: 0;
 
-  margin-bottom: 2px;
+  margin-top: 0.5%;
+  margin-left: 0.5%;
+  margin-right: var(--element-spacing);
+  height: 80vh;
+  width: calc( var(--playlist-row-width) + 2vw);
+  overflow: hidden; /* Add this line */
+  border: 1px solid white; /* Add your desired color here */
+  background-color: #ff84d0;
+  border-radius: var(--playlist-border-radius);
 }
+
 .playlist {
-    position:absolute;
-    top:0;
-    left:0;
-    margin-top: 1.5%;
-    margin-left: 0.5%;
-    margin-right: var(--element-spacing);
-    overflow-y: auto;
-    max-height: 80vh;
+  overflow-y: auto;
+  max-height: 100%;
+  padding-bottom: calc(var(--playlist-row-height) / 2); /* Add this line */
+
+  margin-left: 1vw;
+  margin-right: 1vw;
+}
+.playlist-text {
+  margin-top: 1.5%;
+  margin-bottom: 1.5%;
+  margin-left: 1vw;
+  margin-right: 1vw;
+
 }
 
 .playlist-row {
   display: block;
   margin: 1vh 0;
   background-color: #FF0099;
-  border-radius: 10px;
+  border-radius: var(--playlist-border-radius);
   padding: 1vh;
 
   position: relative; /* This is needed for absolute positioning of child elements */
