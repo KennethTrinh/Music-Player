@@ -1,28 +1,28 @@
 # Music-Player
+
 Pitch Shifter in javascript!
 
-
 In one terminal:
+
 ```
 npm run watch
 ```
 
 In another terminal:
+
 ```
 npm run start
 ```
 
-
 [Website](https://kennethtrinh.github.io/Music-Player/)
-
 
 ## Keyboard Controls
 
 This application supports the following keyboard controls for ease of use:
 
-- **ArrowDown**: Pressing the down arrow key will skip to the next song in the playlist.
+- **ArrowDown**: Pressing the down arrow / 's' key will skip to the next song in the playlist.
 
-- **ArrowUp**: Pressing the up arrow key will go back to the previous song in the playlist.
+- **ArrowUp**: Pressing the up arrow / 'w' key will go back to the previous song in the playlist.
 
 - **ArrowRight**: Pressing the right arrow key will increase the pitch factor of the current song by 1.
 

@@ -214,9 +214,7 @@ class AnimationUI {
 
 }
 
-let playlist = new Playlist(
-  [0, 'Mia & Sebastian\'s Theme - Arr. Mercuzio', `music/Mia & Sebastian's Theme - Arr. Mercuzio.mp3`],
-);
+let playlist = new Playlist();
 
 let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let audioPlayer = new AudioPlayer(audioContext);
@@ -291,11 +289,11 @@ async function setupEngine(initial) {
 document.addEventListener('keydown', (event) => {
     const keyName = event.key;
 
-    if (keyName === 'ArrowDown') {
+    if (keyName === 'ArrowDown' || keyName === 's') {
         event.preventDefault();
         playlist.nextSong();
         loadSong(false);
-    } else if (keyName === 'ArrowUp') {
+    } else if (keyName === 'ArrowUp' || keyName === 'w') {
         event.preventDefault();
         playlist.previousSong();
         loadSong(false);
@@ -454,9 +452,13 @@ window.repeatSong = function (id){
 
 window.onload = async function() {
 
+    const resp = await fetch('music/index.json');
+    const songs = await resp.json();
+    songs.forEach((song, i) => playlist.addSong(i, song.name, song.path));
+
     for (let i=0; i<playlist.songs.length; i++){
         $('.playlist').append(
-            `<div class=playlist-row id=${playlist.songs[i].id} onclick="nav(this.id)"> ${playlist.songs[i].name} 
+            `<div class=playlist-row id=${playlist.songs[i].id} onclick="nav(this.id)"> ${playlist.songs[i].name}
                 <button class="delete-button" onclick="deleteSong(this.parentElement.id); event.stopPropagation();">Delete</button>
                 <button class="repeat-button" onclick="repeatSong(this.parentElement.id); event.stopPropagation();">Repeat</button>
             </div>`
