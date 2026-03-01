@@ -1,66 +1,93 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
+  <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ken's Website</title>
     <link rel="stylesheet" type="text/css" href="./style.css" />
-    <link rel="icon" href="https://i.pinimg.com/236x/c5/f3/04/c5f30496e61ff54940f9f4865e1d53fd.jpg" />
+    <link
+      rel="icon"
+      href="https://i.pinimg.com/236x/c5/f3/04/c5f30496e61ff54940f9f4865e1d53fd.jpg"
+    />
     <!-- <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet"> -->
     <!-- <script src="https://kit.fontawesome.com/111924c1a3.js" crossorigin="anonymous"></script> -->
-</head>
-<body>
+  </head>
+  <body>
     <div class="wrapper">
-        <div class="playlist-container">
-            <div class="playlist-text">
-                <strong> My Hopeless Romantic Playlist </strong>
-            </div>
-            <div class="playlist"> </div>
+      <div class="playlist-container">
+        <div class="playlist-text">
+          <strong> My Hopeless Romantic Playlist </strong>
+          <span class="playlist-toggle-arrow">&#9660;</span>
         </div>
-        <div class="music-player">
-            <h1>Pitch shifter</h1>
-            <div id="no-worklet" style="display: none;">Audio Worklet API not supported by you browser, try a recent Chrome version.</div>
-            <div class="sound-wave"> </div>
-            <canvas id="canvas" ></canvas>
-            <div class="controls">
-                <div style="display: flex;">
-                    <label for="speed">
-                        <span>Speed (semitones)</span>
-                        <input id="speed" type="range" min="-12" max="12" step="1" />
-                        <span id="speed-value">0</span>
-                    </label>
-                    <label for="pitch">
-                        <span>Pitch (semitones)</span>
-                        <input id="pitch" type="range" min="-12" max="12" step="1" />
-                        <span id="pitch-value">0</span>
-                    </label>
-                </div>
-                <div style="display: flex;">
-                    <label for="equalizer">
-                        <span>Equalizer gain</span>
-                        <input id="equalizer" type="range" min="-50" max="50" step="1" value="0" />
-                        <span id="equalizer-value">0</span>
-                    </label>
-                    <select id="frequency-select">
-                        <option value="40">Sub-bass (20 Hz - 60 Hz)</option>
-                        <option value="155">Bass (60 Hz - 250 Hz)</option>
-                        <option value="375">Low Midrange (250 Hz - 500 Hz)</option>
-                        <option value="1250">Midrange (500 Hz - 2000 Hz)</option>
-                        <option value="3000">Upper Midrange (2000 Hz - 4000 Hz)</option>
-                        <option value="5000">Presence (4000 Hz - 6000 Hz)</option>
-                        <option value="7000">Brilliance (6000 Hz - 8000 Hz)</option>
-                        <option value="10000">Air (8000 Hz - 12000 Hz)</option>
-                        <option value="16000">High frequencies (12000 Hz - 20000 Hz)</option>
-                    </select>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <input type="file" accept=".mp3,audio/*" onchange="extract(this)" multiple>
-                    <audio id="audio-player" controls></audio>
-                </div>
-            </div>
+        <div class="playlist"></div>
+      </div>
+      <div class="music-player">
+        <h1>Pitch shifter</h1>
+        <div id="no-worklet" style="display: none">
+          Audio Worklet API not supported by you browser, try a recent Chrome
+          version.
         </div>
+        <div class="sound-wave"></div>
+        <canvas id="canvas"></canvas>
+        <div class="controls">
+          <div style="display: flex">
+            <label for="speed">
+              <span>Speed (semitones)</span>
+              <input id="speed" type="range" min="-12" max="12" step="1" />
+              <span id="speed-value">0</span>
+            </label>
+            <label for="pitch">
+              <span>Pitch (semitones)</span>
+              <input id="pitch" type="range" min="-12" max="12" step="1" />
+              <span id="pitch-value">0</span>
+            </label>
+          </div>
+          <div style="display: flex">
+            <label for="equalizer">
+              <span>Equalizer gain</span>
+              <input
+                id="equalizer"
+                type="range"
+                min="-50"
+                max="50"
+                step="1"
+                value="0"
+              />
+              <span id="equalizer-value">0</span>
+            </label>
+            <select id="frequency-select">
+              <option value="40">Sub-bass (20 Hz - 60 Hz)</option>
+              <option value="155">Bass (60 Hz - 250 Hz)</option>
+              <option value="375">Low Midrange (250 Hz - 500 Hz)</option>
+              <option value="1250">Midrange (500 Hz - 2000 Hz)</option>
+              <option value="3000">Upper Midrange (2000 Hz - 4000 Hz)</option>
+              <option value="5000">Presence (4000 Hz - 6000 Hz)</option>
+              <option value="7000">Brilliance (6000 Hz - 8000 Hz)</option>
+              <option value="10000">Air (8000 Hz - 12000 Hz)</option>
+              <option value="16000">
+                High frequencies (12000 Hz - 20000 Hz)
+              </option>
+            </select>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <input
+              type="file"
+              accept=".mp3,audio/*"
+              onchange="extract(this)"
+              multiple
+            />
+            <audio id="audio-player" controls></audio>
+          </div>
+        </div>
+      </div>
     </div>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="./dist/bundle.js"></script>
-</body>
-
+  </body>
 </html>

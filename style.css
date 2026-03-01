@@ -64,6 +64,10 @@ path {
     margin: 10px 0;
 }
 
+#audio-player {
+    width: 25vw;
+}
+
 .controls label {
   margin-left: 10px;
 }
@@ -240,6 +244,114 @@ body .sound-wave {
   justify-content: center;
   margin-top: 8vh;
   width: var(--main-area-width);
+}
+
+.playlist-toggle-arrow {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --main-area-width: 92vw;
+    --playlist-row-width: 88vw;
+  }
+
+  /* Explicitly override the global div { max-width: 65vw } for key elements.
+     Class selectors (0-1-0) beat the element selector (0-0-1) regardless of order. */
+  .wrapper,
+  .playlist-container,
+  .playlist-text,
+  .playlist,
+  .playlist-row,
+  .music-player,
+  .controls,
+  .sound-wave {
+    max-width: 100%;
+  }
+
+  .wrapper {
+    padding: 0;
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .playlist-container {
+    position: relative;
+    width: 100%;
+    height: auto;
+    flex-shrink: 0;
+    margin: 0;
+    border-radius: 0 0 var(--playlist-border-radius) var(--playlist-border-radius);
+  }
+
+  .playlist-text {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    padding: 12px;
+    margin: 0;
+  }
+
+  .playlist {
+    display: none;
+    max-height: 50vh;
+  }
+
+  .playlist-container.open .playlist {
+    display: block;
+  }
+
+  .playlist-row {
+    width: 90%;
+    max-width: none;
+  }
+
+  .playlist-toggle-arrow {
+    display: inline-block;
+    transition: transform 0.3s ease;
+  }
+
+  .playlist-container.open .playlist-toggle-arrow {
+    transform: rotate(180deg);
+  }
+
+  .music-player {
+    margin-left: 0;
+    padding: 5vw;
+  }
+
+  h1 {
+    margin-top: 0;
+  }
+
+  .controls label {
+    margin-left: 0;
+    width: 90vw;
+    text-align: center;
+  }
+
+  .controls > div {
+    flex-direction: column;
+    align-items: center;
+    width: 90vw;
+    gap: 10px;
+  }
+
+  input[type=range] {
+    width: 90vw;
+  }
+
+  #frequency-select {
+    width: 90vw;
+  }
+
+  #audio-player {
+    width: 100%;
+  }
 }
 
 body .bar {

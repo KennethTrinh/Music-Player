@@ -149,7 +149,7 @@ class AnimationUI {
     }
     canvasFreqUpdate() {
         this.canvas = document.getElementById('canvas');
-        this.canvas.width = window.innerWidth * 0.60;
+        this.canvas.width = window.innerWidth * (window.innerWidth < 768 ? 0.90 : 0.60);
         this.canvas.height = window.innerHeight * 0.5;
         this.cwidth = this.canvas.width;
         this.cheight = this.canvas.height - 2;
@@ -466,6 +466,11 @@ window.onload = async function() {
         Array.from({length: 100}, () => $('<div>').addClass('bar'))
     );
     animationUI.bars = document.querySelectorAll('.bar');
+
+    document.querySelector('.playlist-text').addEventListener('click', function() {
+        document.querySelector('.playlist-container').classList.toggle('open');
+    });
+
     await loadSong(true); // load first song
 
 }
