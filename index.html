@@ -24,8 +24,7 @@
       <div class="music-player">
         <h1>Pitch shifter</h1>
         <div id="no-worklet" style="display: none">
-          Audio Worklet API not supported by you browser, try a recent Chrome
-          version.
+          Audio Worklet API not supported by you browser, try a recent Chrome version.
         </div>
         <div class="sound-wave"></div>
         <canvas id="canvas"></canvas>
@@ -45,14 +44,7 @@
           <div style="display: flex">
             <label for="equalizer">
               <span>Equalizer gain</span>
-              <input
-                id="equalizer"
-                type="range"
-                min="-50"
-                max="50"
-                step="1"
-                value="0"
-              />
+              <input id="equalizer" type="range" min="-50" max="50" step="1" value="0" />
               <span id="equalizer-value">0</span>
             </label>
             <select id="frequency-select">
@@ -64,30 +56,22 @@
               <option value="5000">Presence (4000 Hz - 6000 Hz)</option>
               <option value="7000">Brilliance (6000 Hz - 8000 Hz)</option>
               <option value="10000">Air (8000 Hz - 12000 Hz)</option>
-              <option value="16000">
-                High frequencies (12000 Hz - 20000 Hz)
-              </option>
+              <option value="16000">High frequencies (12000 Hz - 20000 Hz)</option>
             </select>
           </div>
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-            "
-          >
-            <input
-              type="file"
-              accept=".mp3,audio/*"
-              onchange="extract(this)"
-              multiple
-            />
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <input type="file" accept=".mp3,audio/*" onchange="extract(this)" multiple />
             <audio id="audio-player" controls></audio>
           </div>
         </div>
       </div>
     </div>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="module">
+      // Import and expose parseBlob globally for use in bundle.js
+      import { parseBlob } from "https://cdn.jsdelivr.net/npm/@industral/music-metadata-browser@0.7.1/+esm";
+      window.parseBlob = parseBlob;
+    </script>
     <script src="./dist/bundle.js"></script>
   </body>
 </html>

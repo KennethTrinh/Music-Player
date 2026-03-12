@@ -1,26 +1,36 @@
 @font-face {
-    font-display: swap;
-    font-family: CircularSp-Hebr;
-    font-weight: 400;
-    src: url(https://encore.scdn.co/fonts/CircularSp-Hebr-Book-414f88babad55bb44c9552d9b92504f7.woff2) format("woff2"),url(https://encore.scdn.co/fonts/CircularSp-Hebr-Book-d8209975eafc81a9499df8401a339ddd.woff) format("woff");
-    unicode-range: u+0000,u+000d,u+0020,u+0030-0039,u+00a0,u+00a4,u+00b6-00b7,u+01c4-01c6,u+01f1-01f3,u+02bb-02bc,u+05b0-05c4,u+05d0-05ea,u+05f0-05f4,u+200e-200f,u+20aa,u+fb2a-fb36,u+fb38-fb3c,u+fb3e,u+fb40-fb41,u+fb43-fb44,u+fb46-fb4f,u+ffff
+  font-display: swap;
+  font-family: CircularSp-Hebr;
+  font-weight: 400;
+  src:
+    url(https://encore.scdn.co/fonts/CircularSp-Hebr-Book-414f88babad55bb44c9552d9b92504f7.woff2)
+      format("woff2"),
+    url(https://encore.scdn.co/fonts/CircularSp-Hebr-Book-d8209975eafc81a9499df8401a339ddd.woff)
+      format("woff");
+  unicode-range:
+    u+0000, u+000d, u+0020, u+0030-0039, u+00a0, u+00a4, u+00b6-00b7, u+01c4-01c6, u+01f1-01f3,
+    u+02bb-02bc, u+05b0-05c4, u+05d0-05ea, u+05f0-05f4, u+200e-200f, u+20aa, u+fb2a-fb36,
+    u+fb38-fb3c, u+fb3e, u+fb40-fb41, u+fb43-fb44, u+fb46-fb4f, u+ffff;
 }
 
 :root {
   --button-height: 20px;
-  --playlist-row-height: 8vh; 
+  --playlist-row-height: 8vh;
   --playlist-row-width: 20vw;
   --element-spacing: 10vw;
   --main-area-width: 60vw;
   --playlist-border-radius: 10px;
 }
 
-*, *:before, *:after {
-    box-sizing: border-box;
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
 }
 
-html, body {
-    height: 100%;
+html,
+body {
+  height: 100%;
 }
 
 h1 {
@@ -29,43 +39,43 @@ h1 {
 }
 
 body {
-    padding: 0;
-    font-family: 'CircularSp', sans-serif;
-    font-size: 16px;
-    display: flex;
-    justify-content: center;
-    background-color: rgb(0, 0, 0);
+  padding: 0;
+  font-family: "CircularSp", sans-serif;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  background-color: rgb(0, 0, 0);
 }
 
 div {
-    color: white;
-    max-width: 65vw;
+  color: white;
+  max-width: 65vw;
 }
 
 path {
-    stroke: pink;
+  stroke: pink;
 }
 
 .wrapper {
-    height: 100%;
-    padding: 10% 0 0 0;
+  height: 100%;
+  padding: 10% 0 0 0;
 }
 
 .controls {
-    width: var(--main-area-width);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
+  width: var(--main-area-width);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
 }
 
 #frequency-select {
-    height: auto;
-    margin: 10px 0;
+  height: auto;
+  margin: 10px 0;
 }
 
 #audio-player {
-    width: 25vw;
+  width: 25vw;
 }
 
 .controls label {
@@ -77,15 +87,15 @@ path {
   text-align: center;
 }
 
-.disabled{
+.disabled {
   opacity: 0.1;
   pointer-events: none;
 }
 
 #no-worklet {
-    text-align: center;
-    font-size: 1.1em;
-    font-weight: bold;
+  text-align: center;
+  font-size: 1.1em;
+  font-weight: bold;
 }
 
 .music-player {
@@ -101,7 +111,7 @@ path {
   margin-left: 0.5%;
   margin-right: var(--element-spacing);
   height: 80vh;
-  width: calc( var(--playlist-row-width) + 2vw);
+  width: calc(var(--playlist-row-width) + 2vw);
   overflow: hidden; /* Add this line */
   border: 1px solid white; /* Add your desired color here */
   background-color: #ff84d0;
@@ -121,28 +131,45 @@ path {
   margin-bottom: 1.5%;
   margin-left: 1vw;
   margin-right: 1vw;
-
 }
 
 .playlist-row {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 1vh;
   margin: 1vh 0;
-  background-color: #FF0099;
+  background-color: #ff0099;
   border-radius: var(--playlist-border-radius);
   padding: 1vh;
 
   position: relative; /* This is needed for absolute positioning of child elements */
-  transition: height 0.3s ease; 
+  transition: height 0.3s ease;
   height: var(--playlist-row-height);
   cursor: pointer;
-  overflow-wrap: break-word; 
-  overflow: hidden; 
+  overflow-wrap: break-word;
+  overflow: hidden;
   width: var(--playlist-row-width);
   max-width: 500px;
   margin-bottom: 2px;
 }
 
-.delete-button, .repeat-button {
+.playlist-artwork {
+  width: var(--playlist-row-height);
+  height: var(--playlist-row-height);
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.song-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete-button,
+.repeat-button {
   position: absolute;
   bottom: 0;
   height: var(--button-height);
@@ -150,7 +177,6 @@ path {
   border: none;
   background-color: #67003e;
   color: white;
-  
 }
 .delete-button {
   left: 0;
@@ -161,78 +187,83 @@ path {
 
 .playlist-row:hover {
   font-weight: bold;
-  height: calc(var(--button-height) + var(--playlist-row-height)); /* This is the height of the row when hovered */
+  height: calc(
+    var(--button-height) + var(--playlist-row-height)
+  ); /* This is the height of the row when hovered */
+}
+
+.playlist-row:hover .song-name {
   white-space: normal;
 }
 
 .playlist-row:hover .delete-button,
 .playlist-row:hover .repeat-button {
-    display: inline-block;
+  display: inline-block;
 }
 
 /* webkit */
 
-input[type=range]{
-    -webkit-appearance: none;
-    width: 25vw;
-    display: block;
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 25vw;
+  display: block;
 }
 
-input[type=range]::-webkit-slider-runnable-track {
-    height: 5px;
-    background: #ddd;
-    border: none;
-    border-radius: 3px;
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 5px;
+  background: #ddd;
+  border: none;
+  border-radius: 3px;
 }
 
-input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    border: none;
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    background: pink;
-    margin-top: -4px;
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  border: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: pink;
+  margin-top: -4px;
 }
 
-input[type=range]:focus {
-    outline: none;
+input[type="range"]:focus {
+  outline: none;
 }
 
-input[type=range]:focus::-webkit-slider-runnable-track {
-    background: #ccc;
+input[type="range"]:focus::-webkit-slider-runnable-track {
+  background: #ccc;
 }
 
 /* firefox */
 
-
-input[type=range]::-moz-range-track {
-    height: 5px;
-    background: #ddd;
-    border: none;
-    border-radius: 3px;
+input[type="range"]::-moz-range-track {
+  height: 5px;
+  background: #ddd;
+  border: none;
+  border-radius: 3px;
 }
 
-input[type=range]::-moz-range-thumb {
-    border: none;
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    background: pink;
+input[type="range"]::-moz-range-thumb {
+  border: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: pink;
 }
 
 /*hide the outline behind the border*/
-input[type=range]:-moz-focusring{
-    outline: 1px solid white;
-    outline-offset: -1px;
+input[type="range"]:-moz-focusring {
+  outline: 1px solid white;
+  outline-offset: -1px;
 }
 
-input[type=range]:focus::-moz-range-track {
-    background: #ccc;
+input[type="range"]:focus::-moz-range-track {
+  background: #ccc;
 }
 
-.delete-button, .repeat-button {
-    display: none;
+.delete-button,
+.repeat-button {
+  display: none;
 }
 
 /* Amplitide Spectrum */
@@ -341,7 +372,7 @@ body .sound-wave {
     gap: 10px;
   }
 
-  input[type=range] {
+  input[type="range"] {
     width: 90vw;
   }
 
@@ -358,12 +389,11 @@ body .bar {
   animation-name: wave-lg;
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out;
-  
-   transition: height 0.1s ease-in-out;
+
+  transition: height 0.1s ease-in-out;
   animation-direction: alternate;
   background: pink;
   margin: 0 1.5px;
   height: 5vh;
   width: 2%;
 }
-
