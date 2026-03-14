@@ -239,6 +239,10 @@ async function loadSong(initial) {
         return;
     }
     $("h1").text(playlist.currentSong.name);
+
+    // Highlight the current song
+    $(".playlist-row").css("background-color", "#FF0099");
+    $(`#${playlist.songIndex}`).css("background-color", "pink");
     animationUI.stopAnimation();
 
     let oldEqualizer = initial ? null : equalizer.getGains();
@@ -437,6 +441,7 @@ window.extract = async (data) => {
                 : "";
             $(".playlist").append(
                 `<div class=playlist-row id=${playlist.songs.length} onclick="nav(this.id)">
+                    <span class="repeat-emoji" style="display: none; position: absolute; top: 5px; right: 5px; font-size: 20px;">🔁</span>
                     ${artworkHtml}
                     <span class="song-name">${file_name}</span>
                     <button class="delete-button" onclick="deleteSong(this.parentElement.id); event.stopPropagation();">Delete</button>
@@ -470,28 +475,28 @@ window.deleteSong = function (id) {
 
 window.repeatSong = function (id) {
     id = parseInt(id);
-    let changeColor = (id, enable) => {
-        let elementDiv = $(`#${id}`);
+    let toggleRepeatEmoji = (id, enable) => {
+        let emojiElement = $(`#${id} .repeat-emoji`);
         if (enable) {
-            elementDiv.css("background-color", "pink");
+            emojiElement.show();
         } else {
-            elementDiv.css("background-color", "#FF0099");
+            emojiElement.hide();
         }
     };
 
     if (playlist.repeatSong === id) {
         // if repeat is already set, unset it
-        changeColor(id, false);
+        toggleRepeatEmoji(id, false);
         playlist.repeatSong = null;
     } else if (playlist.repeatSong !== null) {
         // if another repeat is set, unset it
-        changeColor(playlist.repeatSong, false);
+        toggleRepeatEmoji(playlist.repeatSong, false);
         playlist.repeatSong = id;
-        changeColor(id, true);
+        toggleRepeatEmoji(id, true);
     } else {
         // set repeat
         playlist.repeatSong = id;
-        changeColor(id, true);
+        toggleRepeatEmoji(id, true);
     }
 };
 
@@ -528,6 +533,7 @@ window.onload = async function () {
             : "";
         $(".playlist").append(
             `<div class=playlist-row id=${i} onclick="nav(this.id)">
+                <span class="repeat-emoji" style="display: none; position: absolute; top: 5px; right: 5px; font-size: 20px;">🔁</span>
                 ${artworkHtml}
                 <span class="song-name">${song.name}</span>
                 <button class="delete-button" onclick="deleteSong(this.parentElement.id); event.stopPropagation();">Delete</button>
