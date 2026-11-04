@@ -146,7 +146,7 @@ class AnimationUI {
     canvasFreqUpdate() {
         this.canvas = document.getElementById("canvas");
         this.canvas.width = window.innerWidth * (window.innerWidth < 768 ? 0.9 : 0.6);
-        this.canvas.height = window.innerHeight * 0.5;
+        this.canvas.height = window.innerHeight * 0.3;
         this.cwidth = this.canvas.width;
         this.cheight = this.canvas.height - 2;
         this.meterNum = 80;
@@ -239,6 +239,7 @@ async function loadSong(initial) {
         return;
     }
     $("h1").text(playlist.currentSong.name);
+    updateNowPlayingArt(playlist.currentSong.artwork);
 
     // Highlight the current song
     $(".playlist-row").removeClass("active");
@@ -272,6 +273,17 @@ async function loadSong(initial) {
     animationUI.startAnimation();
 
     if (!initial) audioPlayer.play();
+}
+
+function updateNowPlayingArt(artworkUrl) {
+    const art = document.getElementById("np-art");
+    if (artworkUrl) {
+        art.src = artworkUrl;
+        art.hidden = false;
+    } else {
+        art.removeAttribute("src");
+        art.hidden = true;
+    }
 }
 
 async function setupEngine(initial) {
@@ -346,6 +358,52 @@ audioElement.addEventListener("play", function () {
 audioElement.addEventListener("ended", function () {
     playlist.nextSong();
     loadSong(false);
+});
+
+// Transport bar
+const $playBtn = document.querySelector("#play-btn");
+const $seek = document.querySelector("#seek");
+const $timeCurrent = document.querySelector("#time-current");
+const $timeTotal = document.querySelector("#time-total");
+
+function formatTime(seconds) {
+    if (!isFinite(seconds)) return "0:00";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function syncPlayButton() {
+    const paused = audioElement.paused;
+    $playBtn.innerHTML = paused ? "&#9654;&#xFE0E;" : "&#10074;&#10074;";
+    $playBtn.setAttribute("aria-label", paused ? "Play" : "Pause");
+}
+
+$playBtn.addEventListener("click", () => {
+    if (audioElement.paused) audioPlayer.play();
+    else audioPlayer.pause();
+});
+document.querySelector("#next-btn").addEventListener("click", () => {
+    playlist.nextSong();
+    loadSong(false);
+});
+document.querySelector("#prev-btn").addEventListener("click", () => {
+    playlist.previousSong();
+    loadSong(false);
+});
+audioElement.addEventListener("play", syncPlayButton);
+audioElement.addEventListener("pause", syncPlayButton);
+audioElement.addEventListener("loadedmetadata", () => {
+    $seek.max = audioElement.duration;
+    $timeTotal.textContent = formatTime(audioElement.duration);
+});
+audioElement.addEventListener("timeupdate", () => {
+    if (!$seek.matches(":active")) $seek.value = audioElement.currentTime;
+    $timeCurrent.textContent = formatTime(audioElement.currentTime);
+});
+$seek.addEventListener("input", () => audioPlayer.seek(parseFloat($seek.value)));
+document.querySelector("#volume").addEventListener("input", function () {
+    audioElement.volume = parseFloat(this.value);
 });
 
 let $speedSlider = document.querySelector("#speed");
