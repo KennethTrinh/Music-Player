@@ -284,6 +284,9 @@ are propagated in time and their weaker neighbours inherit phase from them. Bins
   inside the frame, so no future audio is needed. Total latency is about one frame (4096 samples, ~93 ms).
 - **Exact pitch.** The synthesis hop is `round(p * 512)`, with the rounding error carried to the next frame, so on average the
   stretch is exactly `p`. A 440 Hz tone shifted by any whole number of semitones lands within 0.4 cents of the target.
+- **Resampling kernel.** The final resample uses a 32-tap Kaiser-windowed sinc. When pitching down the signal is upsampled, and
+  an ordinary cubic interpolator leaves mirrored images of the music in the band the shift just emptied (measured at -26 dB below the signal,
+  visible as lit bars at the top of the spectrum meter). The sinc kernel brings that below -90 dB.
 - **Anti-aliasing.** When shifting up, bins that would land above Nyquist after resampling are faded out in the spectrum first.
 - **Normalisation.** Overlap-add divides by the window energy actually accumulated at each sample, so level stays correct when the
   pitch (and therefore the hop) changes while playing.

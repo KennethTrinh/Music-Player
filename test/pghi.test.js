@@ -125,6 +125,37 @@ for (const st of [-12, -5, 0, 2, 7, 12]) {
     console.log("silence / noise / impulses: ok");
 }
 
+// 4b. shifting down must not create content above the shifted band (resampler imaging).
+// Input is noise low-passed at 16 kHz, like a typical mp3; a -5 st shift puts its edge at ~12 kHz.
+{
+    const L = 1 << 18;
+    const fft = new FFT(L);
+    const white = new Float64Array(L).map(() => Math.random() * 2 - 1);
+    const sp = fft.createComplexArray();
+    fft.realTransform(sp, white);
+    for (let k = Math.floor((16000 / SAMPLE_RATE) * L); k <= L / 2; k++) sp[2 * k] = sp[2 * k + 1] = 0;
+    fft.completeSpectrum(sp);
+    const td = fft.createComplexArray();
+    fft.inverseTransform(td, sp);
+    const lp = new Float64Array(L);
+    fft.fromComplexArray(td, lp);
+    const peak = lp.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
+    const input = new Float32Array(4 * SAMPLE_RATE).map((_, n) => (0.5 * lp[n]) / peak);
+    for (const st of [-1, -5, -12]) {
+        const mags = spectrum(run(input, () => semitones(st)));
+        const edge = Math.max(13000, 16000 * semitones(st) + 500);
+        let above = 0;
+        let total = 0;
+        mags.forEach((m, k) => {
+            total += m * m;
+            if ((k * SAMPLE_RATE) / 16384 >= edge) above += m * m;
+        });
+        const db = 10 * Math.log10(above / total);
+        console.log(`band-limited noise ${st} st: ${db.toFixed(1)} dB above the shifted band`);
+        assert(db < -60, `imaging above the shifted band at ${st} st: ${db} dB`);
+    }
+}
+
 // 5. cost: worst-case time of one block (a frame is processed every 4th block)
 {
     const shifter = new PGHIPitchShifter();
