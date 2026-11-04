@@ -19,7 +19,13 @@
   --playlist-row-width: 20vw;
   --element-spacing: 10vw;
   --main-area-width: 60vw;
-  --playlist-border-radius: 10px;
+  --playlist-border-radius: 14px;
+  --accent: #ff7ac6;
+  --accent-strong: #ff0099;
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-hover: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 255, 255, 0.1);
+  --text-muted: rgba(255, 255, 255, 0.6);
 }
 
 *,
@@ -36,6 +42,13 @@ body {
 h1 {
   margin-top: -5vh;
   word-wrap: break-word;
+  font-size: 2.4rem;
+  letter-spacing: -0.02em;
+  text-align: center;
+  background: linear-gradient(90deg, #ffb3dd, var(--accent-strong));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 body {
@@ -44,7 +57,8 @@ body {
   font-size: 16px;
   display: flex;
   justify-content: center;
-  background-color: rgb(0, 0, 0);
+  background: radial-gradient(circle at 20% 0%, #3a0a29 0%, #120410 45%, #000 100%) fixed;
+  -webkit-font-smoothing: antialiased;
 }
 
 div {
@@ -53,7 +67,12 @@ div {
 }
 
 path {
-  stroke: pink;
+  stroke: var(--accent);
+}
+
+::selection {
+  background: var(--accent-strong);
+  color: white;
 }
 
 .wrapper {
@@ -78,13 +97,73 @@ path {
   width: 25vw;
 }
 
+.controls {
+  gap: 14px;
+  padding: 20px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
 .controls label {
-  margin-left: 10px;
+  margin: 0 14px;
 }
 
 .controls label span {
   display: block;
   text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 4px 0;
+}
+
+.controls label span[id] {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+select,
+input[type="file"] {
+  color: white;
+  font-family: inherit;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+select option {
+  background: #1a0615;
+}
+
+input[type="file"]::file-selector-button {
+  font-family: inherit;
+  color: white;
+  background: var(--accent-strong);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  margin-right: 10px;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+  filter: brightness(1.2);
+}
+
+#audio-player {
+  accent-color: var(--accent);
+  border-radius: 30px;
+  margin-left: 12px;
 }
 
 .disabled {
@@ -112,9 +191,12 @@ path {
   margin-right: var(--element-spacing);
   height: 80vh;
   width: calc(var(--playlist-row-width) + 2vw);
-  overflow: hidden; /* Add this line */
-  border: 1px solid white; /* Add your desired color here */
-  background-color: #ff84d0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   border-radius: var(--playlist-border-radius);
 }
 
@@ -125,12 +207,19 @@ path {
 
   margin-left: 1vw;
   margin-right: 1vw;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 .playlist-text {
   margin-top: 1.5%;
   margin-bottom: 1.5%;
   margin-left: 1vw;
   margin-right: 1vw;
+  padding: 10px 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
 }
 
 .playlist-row {
@@ -138,12 +227,16 @@ path {
   align-items: center;
   gap: 1vh;
   margin: 1vh 0;
-  background-color: #ff0099;
+  background-color: var(--surface);
+  border: 1px solid transparent;
   border-radius: var(--playlist-border-radius);
   padding: 1vh;
 
   position: relative; /* This is needed for absolute positioning of child elements */
-  transition: height 0.3s ease;
+  transition:
+    height 0.3s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
   height: var(--playlist-row-height);
   cursor: pointer;
   overflow-wrap: break-word;
@@ -157,8 +250,9 @@ path {
   width: var(--playlist-row-height);
   height: var(--playlist-row-height);
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 8px;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .song-name {
@@ -175,8 +269,16 @@ path {
   height: var(--button-height);
   display: none;
   border: none;
-  background-color: #67003e;
+  background-color: rgba(0, 0, 0, 0.45);
   color: white;
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.delete-button:hover,
+.repeat-button:hover {
+  background-color: var(--accent-strong);
 }
 .delete-button {
   left: 0;
@@ -185,7 +287,14 @@ path {
   right: 0;
 }
 
+.playlist-row.active {
+  background: linear-gradient(135deg, rgba(255, 0, 153, 0.55), rgba(255, 122, 198, 0.35));
+  border-color: var(--accent);
+  box-shadow: 0 0 18px rgba(255, 0, 153, 0.35);
+}
+
 .playlist-row:hover {
+  background-color: var(--surface-hover);
   font-weight: bold;
   height: calc(
     var(--button-height) + var(--playlist-row-height)
@@ -211,7 +320,7 @@ input[type="range"] {
 
 input[type="range"]::-webkit-slider-runnable-track {
   height: 5px;
-  background: #ddd;
+  background: rgba(255, 255, 255, 0.2);
   border: none;
   border-radius: 3px;
 }
@@ -222,8 +331,14 @@ input[type="range"]::-webkit-slider-thumb {
   height: 16px;
   width: 16px;
   border-radius: 50%;
-  background: pink;
-  margin-top: -4px;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(255, 122, 198, 0.8);
+  margin-top: -5.5px;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
 }
 
 input[type="range"]:focus {
@@ -231,14 +346,14 @@ input[type="range"]:focus {
 }
 
 input[type="range"]:focus::-webkit-slider-runnable-track {
-  background: #ccc;
+  background: rgba(255, 255, 255, 0.35);
 }
 
 /* firefox */
 
 input[type="range"]::-moz-range-track {
   height: 5px;
-  background: #ddd;
+  background: rgba(255, 255, 255, 0.2);
   border: none;
   border-radius: 3px;
 }
@@ -248,7 +363,8 @@ input[type="range"]::-moz-range-thumb {
   height: 16px;
   width: 16px;
   border-radius: 50%;
-  background: pink;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(255, 122, 198, 0.8);
 }
 
 /*hide the outline behind the border*/
@@ -258,7 +374,7 @@ input[type="range"]:-moz-focusring {
 }
 
 input[type="range"]:focus::-moz-range-track {
-  background: #ccc;
+  background: rgba(255, 255, 255, 0.35);
 }
 
 .delete-button,
@@ -392,7 +508,8 @@ body .bar {
 
   transition: height 0.1s ease-in-out;
   animation-direction: alternate;
-  background: pink;
+  background: linear-gradient(to top, var(--accent-strong), var(--accent));
+  border-radius: 3px;
   margin: 0 1.5px;
   height: 5vh;
   width: 2%;

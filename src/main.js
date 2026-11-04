@@ -241,8 +241,8 @@ async function loadSong(initial) {
     $("h1").text(playlist.currentSong.name);
 
     // Highlight the current song
-    $(".playlist-row").css("background-color", "#FF0099");
-    $(`#${playlist.songIndex}`).css("background-color", "pink");
+    $(".playlist-row").removeClass("active");
+    $(`#${playlist.songIndex}`).addClass("active");
     animationUI.stopAnimation();
 
     let oldEqualizer = initial ? null : equalizer.getGains();
