@@ -121,7 +121,7 @@ for (const st of [-12, -5, 0, 2, 7, 12]) {
     for (let i = 0; i < noise.length; i += 11025) noise[i] = 1;
     const out = run(noise, () => semitones(7));
     assert(out.every(Number.isFinite), "non-finite output on noise");
-    assert(Math.max(...out.map(Math.abs)) < 4, "output blew up on noise/impulses");
+    assert(out.reduce((m, v) => Math.max(m, Math.abs(v)), 0) < 4, "output blew up on noise/impulses");
     console.log("silence / noise / impulses: ok");
 }
 
