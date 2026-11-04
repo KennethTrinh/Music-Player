@@ -45,13 +45,34 @@
         <canvas id="canvas"></canvas>
 
         <section class="controls">
-          <div class="controls-row">
+          <div class="controls-row selects-row">
             <label for="algorithm-select">
               <span>Pitch algorithm</span>
               <select id="algorithm-select">
-                <option value="classic">Classic (peak shifting)</option>
                 <option value="pghi">Phase gradient (PGHI)</option>
+                <option value="classic">Classic (peak shifting)</option>
               </select>
+            </label>
+            <label for="frequency-select">
+              <span>EQ band</span>
+              <select id="frequency-select">
+                <option value="40">Sub-bass (20 Hz - 60 Hz)</option>
+                <option value="155">Bass (60 Hz - 250 Hz)</option>
+                <option value="375">Low Midrange (250 Hz - 500 Hz)</option>
+                <option value="1250">Midrange (500 Hz - 2000 Hz)</option>
+                <option value="3000">Upper Midrange (2000 Hz - 4000 Hz)</option>
+                <option value="5000">Presence (4000 Hz - 6000 Hz)</option>
+                <option value="7000">Brilliance (6000 Hz - 8000 Hz)</option>
+                <option value="10000">Air (8000 Hz - 12000 Hz)</option>
+                <option value="16000">High frequencies (12000 Hz - 20000 Hz)</option>
+              </select>
+            </label>
+          </div>
+          <div class="controls-row">
+            <label for="pitch">
+              <span>Pitch (semitones)</span>
+              <input id="pitch" type="range" min="-12" max="12" step="1" />
+              <span id="pitch-value">0</span>
             </label>
           </div>
           <div class="controls-row">
@@ -60,29 +81,11 @@
               <input id="speed" type="range" min="-12" max="12" step="1" />
               <span id="speed-value">0</span>
             </label>
-            <label for="pitch">
-              <span>Pitch (semitones)</span>
-              <input id="pitch" type="range" min="-12" max="12" step="1" />
-              <span id="pitch-value">0</span>
-            </label>
-          </div>
-          <div class="controls-row">
             <label for="equalizer">
               <span>Equalizer gain</span>
               <input id="equalizer" type="range" min="-50" max="50" step="1" value="0" />
               <span id="equalizer-value">0</span>
             </label>
-            <select id="frequency-select">
-              <option value="40">Sub-bass (20 Hz - 60 Hz)</option>
-              <option value="155">Bass (60 Hz - 250 Hz)</option>
-              <option value="375">Low Midrange (250 Hz - 500 Hz)</option>
-              <option value="1250">Midrange (500 Hz - 2000 Hz)</option>
-              <option value="3000">Upper Midrange (2000 Hz - 4000 Hz)</option>
-              <option value="5000">Presence (4000 Hz - 6000 Hz)</option>
-              <option value="7000">Brilliance (6000 Hz - 8000 Hz)</option>
-              <option value="10000">Air (8000 Hz - 12000 Hz)</option>
-              <option value="16000">High frequencies (12000 Hz - 20000 Hz)</option>
-            </select>
           </div>
         </section>
       </main>

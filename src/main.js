@@ -132,6 +132,11 @@ class Playlist {
     }
 }
 
+// Waveform strip: bar height is the sample value in percent of the strip (WAVE_GAIN % per unit amplitude),
+// capped at 100% so loud passages stay inside the card.
+const WAVE_GAIN = 1000;
+const WAVE_MAX_HEIGHT = 100; // percent
+
 class AnimationUI {
     constructor() {
         this.requestId = undefined;
@@ -208,8 +213,11 @@ class AnimationUI {
         analyser.getFloatTimeDomainData(this.timeDomain);
         this.bars.forEach((bar, i) => {
             let index = Math.floor(i * (this.timeDomain.length / this.bars.length));
-            const scaledHeight = this.timeDomain[index] * 1e3; // Change 100 to the maximum height you want
-            bar.style.height = `${scaledHeight}%`;
+            const sample = this.timeDomain[index];
+            // only the positive half of the wave is drawn; a negative sample leaves the bar where it was
+            if (sample > 0) {
+                bar.style.height = `${Math.min(WAVE_MAX_HEIGHT, sample * WAVE_GAIN)}%`;
+            }
         });
 
         this.startAnimation();
