@@ -29,10 +29,18 @@ class EqualizerNode extends GainNode {
             return curr;
         });
 
-        this.connect(this.biquads[0]);
+        super.connect(this.biquads[0]);
+    }
 
-        // Connect the last biquad to the audio context's destination
-        this.biquads[this.biquads.length - 1].connect(this.audioContext.destination);
+    // This node is the equalizer's input; its output is the last biquad. Route connect/disconnect
+    // there so `equalizer.connect(next)` continues the chain after the filters rather than
+    // tapping the unfiltered signal (and so nothing feeds the destination twice).
+    connect(...args) {
+        return this.biquads[this.biquads.length - 1].connect(...args);
+    }
+
+    disconnect(...args) {
+        return this.biquads[this.biquads.length - 1].disconnect(...args);
     }
 
     getGain(frequency) {
