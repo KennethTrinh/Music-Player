@@ -277,6 +277,10 @@ h1 {
   min-width: 0;
 }
 
+.controls label select {
+  width: 100%;
+}
+
 select,
 input[type="file"] {
   color: white;

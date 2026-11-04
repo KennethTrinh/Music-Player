@@ -5,6 +5,10 @@ const FFT = require('fft.js');
 
 const BUFFERED_BLOCK_SIZE = 4096;
 
+// The frame is Hann-windowed on the way in and on the way out, and the overlap-add divides by the
+// overlap count. Overlapped Hann^2 windows average 3/8, so without this the output is 0.375x the input.
+const WINDOW_GAIN_COMPENSATION = 8 / 3;
+
 function genHannWindow(length) {
     let win = new Float32Array(length);
     for (var i = 0; i < length; i++) {
@@ -31,6 +35,8 @@ class PhaseVocoderProcessor extends OLAProcessor {
         this.timeCursor = 0;
 
         this.hannWindow = genHannWindow(this.blockSize);
+        // fold the compensation into the output-side window so it costs nothing per sample
+        this.outputWindow = this.hannWindow.map((w) => w * WINDOW_GAIN_COMPENSATION);
 
         // prepare FFT and pre-allocate buffers
         this.fft = new FFT(this.fftSize);
@@ -67,7 +73,7 @@ class PhaseVocoderProcessor extends OLAProcessor {
                 this.fft.inverseTransform(this.timeComplexBuffer, this.freqComplexBufferShifted);
                 this.fft.fromComplexArray(this.timeComplexBuffer, output);
 
-                this.applyHannWindow(output);
+                this.applyOutputWindow(output);
             }
         }
 
@@ -78,6 +84,13 @@ class PhaseVocoderProcessor extends OLAProcessor {
     applyHannWindow(input) {
         for (var i = 0; i < this.blockSize; i++) {
             input[i] = input[i] * this.hannWindow[i];
+        }
+    }
+
+    /** Apply the output-side Hann window (with unity-gain compensation) in-place */
+    applyOutputWindow(output) {
+        for (var i = 0; i < this.blockSize; i++) {
+            output[i] = output[i] * this.outputWindow[i];
         }
     }
 

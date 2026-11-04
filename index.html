@@ -46,6 +46,15 @@
 
         <section class="controls">
           <div class="controls-row">
+            <label for="algorithm-select">
+              <span>Pitch algorithm</span>
+              <select id="algorithm-select">
+                <option value="classic">Classic (peak shifting)</option>
+                <option value="pghi">Phase gradient (PGHI)</option>
+              </select>
+            </label>
+          </div>
+          <div class="controls-row">
             <label for="speed">
               <span>Speed (semitones)</span>
               <input id="speed" type="range" min="-12" max="12" step="1" />

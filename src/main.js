@@ -227,6 +227,35 @@ let pitchFactor = 0.0;
 
 let playerEngine, phaseVocoderNode, equalizer, analyser, pitchFactorParam;
 
+// Pitch-shift algorithms, each an AudioWorklet registering a processor with a `pitchFactor` param
+const ALGORITHMS = {
+    classic: { module: "./dist/phase-vocoder.js", processor: "phase-vocoder-processor" },
+    pghi: { module: "./dist/pghi-vocoder.js", processor: "pghi-processor" },
+};
+
+async function createVocoderNode() {
+    const algorithm = ALGORITHMS[document.querySelector("#algorithm-select").value];
+    await audioContext.audioWorklet.addModule(algorithm.module);
+    return new AudioWorkletNode(audioContext, algorithm.processor, {
+        outputChannelCount: [2],
+    });
+}
+
+// Switch algorithm mid-song: replace the worklet node in the graph, keeping the pitch setting
+async function swapAlgorithm() {
+    if (!phaseVocoderNode) return;
+    const oldNode = phaseVocoderNode;
+    const pitch = pitchFactorParam.value;
+    const newNode = await createVocoderNode();
+    playerEngine.disconnect(oldNode);
+    oldNode.disconnect();
+    playerEngine.connect(newNode);
+    newNode.connect(equalizer);
+    phaseVocoderNode = newNode;
+    pitchFactorParam = newNode.parameters.get("pitchFactor");
+    pitchFactorParam.value = pitch;
+}
+
 async function loadSong(initial) {
     if (audioContext.audioWorklet === undefined) {
         let $noWorklet = document.querySelector("#no-worklet");
@@ -295,10 +324,7 @@ async function setupEngine(initial) {
     }
     playerEngine = audioPlayer.node;
 
-    await audioContext.audioWorklet.addModule("./dist/phase-vocoder.js");
-    phaseVocoderNode = new AudioWorkletNode(audioContext, "phase-vocoder-processor", {
-        outputChannelCount: [2],
-    });
+    phaseVocoderNode = await createVocoderNode();
     equalizer = new EqualizerNode(audioContext);
     analyser = audioContext.createAnalyser();
 
@@ -430,6 +456,8 @@ $pitchSlider.addEventListener(
     },
     false,
 );
+
+document.querySelector("#algorithm-select").addEventListener("change", swapAlgorithm);
 
 let $equalizer = document.querySelector("#equalizer");
 let $equalizerLabel = document.querySelector("#equalizer-value");
