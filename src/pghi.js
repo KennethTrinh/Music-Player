@@ -1,5 +1,3 @@
-"use strict";
-
 /**
  * Pitch shifter built on a phase-gradient phase vocoder.
  *
@@ -17,7 +15,7 @@
  * frequency bin, n the frame index, phi_a the analysis phase and phi_s the synthesis phase.
  */
 
-const FFT = require("fft.js");
+import FFT from "fft.js";
 
 const FRAME_SIZE = 4096; // window length == FFT length (M)
 const ANALYSIS_HOP = 512; // a_a, 8x window redundancy
@@ -482,4 +480,4 @@ class PGHIPitchShifter {
     }
 }
 
-module.exports = { PGHIPitchShifter, FRAME_SIZE, ANALYSIS_HOP };
+export { PGHIPitchShifter, FRAME_SIZE, ANALYSIS_HOP };

@@ -1,7 +1,5 @@
-"use strict";
-
-const OLAProcessor = require('./ola-processor.js');
-const FFT = require('fft.js');
+import OLAProcessor from "./ola-processor.js";
+import FFT from "fft.js";
 
 const BUFFERED_BLOCK_SIZE = 4096;
 

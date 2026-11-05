@@ -1,4 +1,4 @@
-const EqualizerNode = require("./equalizer");
+import EqualizerNode from "./equalizer.js";
 
 class AudioPlayer {
     constructor(audioContext) {

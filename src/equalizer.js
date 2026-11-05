@@ -70,4 +70,4 @@ class EqualizerNode extends GainNode {
     }
 }
 
-module.exports = EqualizerNode;
+export default EqualizerNode;

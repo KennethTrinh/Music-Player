@@ -1,6 +1,4 @@
-"use strict";
-
-const { PGHIPitchShifter } = require("./pghi.js");
+import { PGHIPitchShifter } from "./pghi.js";
 
 const SILENCE = new Float32Array(128);
 

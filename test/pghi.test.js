@@ -1,8 +1,6 @@
-"use strict";
-
-const assert = require("assert");
-const FFT = require("fft.js");
-const { PGHIPitchShifter } = require("../src/pghi.js");
+import assert from "node:assert";
+import FFT from "fft.js";
+import { PGHIPitchShifter } from "../src/pghi.js";
 
 const SAMPLE_RATE = 44100;
 const BLOCK = 128;
