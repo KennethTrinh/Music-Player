@@ -202,11 +202,12 @@ h1 {
 /* Amplitude spectrum */
 
 .sound-wave {
-  height: 64px;
+  height: 96px;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
+  overflow: hidden;
 }
 
 .bar {
@@ -214,6 +215,7 @@ h1 {
   animation-iteration-count: infinite;
   animation-timing-function: ease-in-out;
   animation-direction: alternate;
+  /* the transition smooths the per-frame height changes; without it the bars flicker */
   transition: height 0.1s ease-in-out;
   background: linear-gradient(to top, var(--accent-strong), var(--accent));
   border-radius: 3px;
@@ -272,9 +274,30 @@ h1 {
   font-weight: bold;
 }
 
-#frequency-select {
-  flex: 1;
+/* compact "label + select" strip: the two dropdowns share one row */
+.controls .selects-row {
+  justify-content: space-between;
+}
+
+.controls .selects-row label {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
+}
+
+.controls .selects-row label span {
+  margin: 0;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.controls .selects-row select {
+  width: auto;
+  min-width: 0;
+  padding: 4px 8px;
+  font-size: 0.85rem;
 }
 
 select,
@@ -629,10 +652,13 @@ input[type="range"]:focus::-moz-range-track {
     gap: 12px;
   }
 
-  .controls label,
-  #frequency-select {
+  .controls label {
     width: 100%;
     flex: none;
+  }
+
+  .controls .selects-row label select {
+    flex: 1;
   }
 }
 

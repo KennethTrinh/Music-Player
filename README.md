@@ -49,6 +49,10 @@ The pitch shifter is a **frequency-domain (phase vocoder style) shifter** that r
 `AudioWorklet` (`src/phase-vocoder.js`, built on the overlap-add scaffolding in `src/ola-processor.js`).
 Instead of resampling the audio, it works out which frequencies are present, moves them, and rebuilds the sound.
 
+The player has two pitch-shift algorithms, chosen with the **Pitch algorithm** dropdown (it can be switched
+while a song is playing): the classic peak-shifting vocoder, explained first, and a
+[phase gradient vocoder](#phase-gradient-vocoder-pghi), explained at the end.
+
 This section has three parts: the [background math](#background-the-math-no-dsp-knowledge-needed),
 the [pipeline](#the-pipeline) as implemented here, and a [toy example](#toy-example-one-sine-wave-through-the-whole-pipeline)
 that pushes a tiny sound through every step with real numbers.
@@ -112,7 +116,7 @@ Three complications make the real thing a bit more involved:
    `2π * (k' - k) / N * timeCursor`, where `k` is the old bin, `k'` the new bin and `timeCursor` is
    how many samples into the song this frame starts.
 
-### The pipeline
+### The pipeline (classic algorithm)
 
 **Slider to ratio.** The pitch slider is in semitones and is converted with `pitchFactor = 2^(semitones / 12)`:
 
@@ -143,13 +147,13 @@ Because the first full window has to fill up before anything comes out, this add
 
 To keep every number small and checkable, shrink the real settings:
 
-|                         | Real player | Toy       |
-| ----------------------- | ----------- | --------- |
-| Frame size `N`          | 4096        | 16        |
-| Hop                     | 128         | 4         |
-| Overlaps per sample     | 32          | 4         |
-| Sample rate             | 44100 Hz    | 16 Hz     |
-| Bin width (rate / N)    | 10.77 Hz    | 1 Hz      |
+|                      | Real player | Toy   |
+| -------------------- | ----------- | ----- |
+| Frame size `N`       | 4096        | 16    |
+| Hop                  | 128         | 4     |
+| Overlaps per sample  | 32          | 4     |
+| Sample rate          | 44100 Hz    | 16 Hz |
+| Bin width (rate / N) | 10.77 Hz    | 1 Hz  |
 
 With a 1 Hz bin width, bin `k` is simply `k` Hz. The input is a pure **3 Hz sine wave**,
 `x[n] = sin(2π · 3 · n / 16)`, and we shift it up an **octave** (`pitchFactor = 2`), so the answer should be a **6 Hz sine**.
@@ -223,7 +227,8 @@ ratio      :  -     0.375  0.375  0.375  -     0.375  0.375  0.375
 
 The output is a clean 6 Hz sine: it completes a cycle every 8 samples, twice as fast as the 16-sample cycle of the 3 Hz input. It's the same
 length as the input and one octave higher. The constant 0.375 factor is the gain of the two Hann windows after
-dividing by the overlap count (the average of `w²`, which is 3/8). A real signal is just many such sines at once,
+dividing by the overlap count (the average of `w²`, which is 3/8). The player multiplies the output window by 8/3 to cancel it,
+so the real output is at the input's level. A real signal is just many such sines at once,
 and each spectral peak goes through the same steps.
 
 **Scaling to the real player.** The bins are 10.77 Hz wide instead of 1 Hz, and bins are whole numbers,
@@ -245,3 +250,54 @@ bins. Overtones go through the same maths (880 Hz: bin 82 → 92), so they stay 
 - Phase correction here is based on the running `timeCursor` rather than on the measured phase of each frame (the
   `previousPhase` and `phaseCumulative` buffers are allocated but unused), so large shifts on sustained notes can sound slightly
   metallic or smeared.
+
+### Phase gradient vocoder (PGHI)
+
+The second algorithm (`src/pghi.js`, wrapped for the browser by `src/pghi-vocoder.js`) fixes the weak spot of the classic one,
+which is the phase. It implements ["Phase Vocoder Done Right"](https://ltfat.org/notes/ltfatnote050.pdf)
+(Prusa & Holighaus), with the streaming integration from
+[Real-time spectrogram inversion using phase gradient heap integration](https://ltfat.org/notes/ltfatnote043.pdf)
+(Prusa & Sondergaard). There is no peak picking, and no transient detection.
+
+**Pitch shift = stretch, then resample.** Stretching a sound by a factor `p` in time without changing its pitch, then playing it back
+`p` times faster, raises the pitch by `p` and restores the original duration. Frames are analysed every 512 samples and
+resynthesised every `p * 512` samples. For each hop of input, exactly one hop of output comes out, which is what a live stream needs.
+(Time-stretching is the job a phase vocoder is built for; the classic algorithm instead moves the spectral peaks directly.)
+
+**Where the phase comes from.** After stretching, every bin needs a new phase. Instead of rotating bins by a guessed angle, the
+analysis phase gives two measurable rates:
+
+- how fast the phase of bin `m` turns from one frame to the next (the instantaneous frequency, the _time derivative_), and
+- how the phase changes from bin `m` to bin `m+1` (the local timing of the energy in the frame, the _frequency derivative_).
+
+The new phase is built by adding these up ("integrating"): along time for steady tones, and along frequency for clicks, drums and
+other broadband sounds, where the frequency direction is what keeps the bins of one event lined up. The heap decides which
+direction to go for each bin: it always continues from the loudest bin whose phase is already known, so the strongest components
+are propagated in time and their weaker neighbours inherit phase from them. Bins quieter than `1e-6` of the maximum get random phase.
+
+**Details worth knowing**
+
+- **Window.** A truncated Gaussian (edge height 0.01), not Hann. The phase-gradient relations are exact for Gaussians. With Hann the
+  alternating-sign sidelobes put adjacent-bin phase steps right on the +-pi wrap, which measurably smears a shifted tone (a sine
+  at +7 semitones kept 97.2% of its energy near the peak with Hann versus 100.0% with the Gaussian).
+- **No look-ahead.** The time derivative uses a backward difference (frames `n` and `n-1`), the frequency derivative a centred difference
+  inside the frame, so no future audio is needed. Total latency is about one frame (4096 samples, ~93 ms).
+- **Exact pitch.** The synthesis hop is `round(p * 512)`, with the rounding error carried to the next frame, so on average the
+  stretch is exactly `p`. A 440 Hz tone shifted by any whole number of semitones lands within 0.4 cents of the target.
+- **Resampling kernel.** The final resample uses a 32-tap Kaiser-windowed sinc. When pitching down the signal is upsampled, and
+  an ordinary cubic interpolator leaves mirrored images of the music in the band the shift just emptied (measured at -26 dB below the signal,
+  visible as lit bars at the top of the spectrum meter). The sinc kernel brings that below -90 dB.
+- **Anti-aliasing.** When shifting up, bins that would land above Nyquist after resampling are faded out in the spectrum first.
+- **Normalisation.** Overlap-add divides by the window energy actually accumulated at each sample, so level stays correct when the
+  pitch (and therefore the hop) changes while playing.
+- **Cost.** About 0.1 ms per 128-sample block per channel on average and under 0.5 ms worst case (measured in Node), against a 2.9 ms
+  real-time budget.
+- **Stereo.** Channels are processed independently, so stereo image can wander slightly on very busy material. A mono source is
+  processed once and copied.
+- **Large jumps.** Changing pitch by many semitones at once can cause a brief level overshoot (one-semitone slider steps stay within about 1%).
+
+**Tests.** `npm test` runs `test/pghi.test.js`, which feeds synthetic audio through the shifter in 128-sample blocks and checks pitch accuracy,
+spectral purity, level, stability under live pitch changes, silence/noise/impulse handling and per-block cost.
+
+**Tuning.** `FRAME_SIZE`, `ANALYSIS_HOP` and `WINDOW_EDGE_HEIGHT` at the top of `src/pghi.js` trade latency and CPU against frequency
+resolution and phase quality. They were chosen from the papers' settings and the measurements above, not tuned by ear.

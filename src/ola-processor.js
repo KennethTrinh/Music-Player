@@ -1,5 +1,3 @@
-"use strict";
-
 const WEBAUDIO_BLOCK_SIZE = 128;
 
 /** Overlap-Add Node */
@@ -175,4 +173,4 @@ class OLAProcessor extends AudioWorkletProcessor {
     }
 }
 
-module.exports = OLAProcessor;
+export default OLAProcessor;
