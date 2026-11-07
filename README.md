@@ -127,7 +127,7 @@ Three complications make the real thing a bit more involved:
 | +2        | 1.1225      | up a whole tone |
 | +12       | 2.0         | one octave up   |
 
-The speed slider uses the same formula but sets `audioElement.playbackRate`, so speed and pitch are independent controls.
+The speed slider uses the same formula but is the `playbackRate` of an `AudioBufferSourceNode` playing the decoded song. Resampling moves the pitch along with the speed, so the vocoder is given `pitchFactor = 2^(pitch / 12) / rate` to cancel it, and speed and pitch stay independent controls.
 
 **Per frame.** Audio arrives in 128-sample blocks. The processor keeps a sliding window of `4096` samples and, every 128
 samples (a _hop_), does:

@@ -1,43 +1,145 @@
 import EqualizerNode from "./equalizer.js";
 import { detectKey, keyFullName, keyLabel } from "./key-detect.js";
 
-class AudioPlayer {
+/**
+ * Plays a decoded AudioBuffer. Speed is the source node's playbackRate, so the pitch moves with it and the
+ * vocoder cancels that. This replaces an <audio> element feeding createMediaElementSource, which stalls the
+ * audio thread at non-1x rates on iOS Safari. Exposes the bits of the media element API the UI uses: paused,
+ * currentTime, duration, volume and the play / pause / ended / loadedmetadata / timeupdate events.
+ */
+class AudioPlayer extends EventTarget {
     constructor(audioContext) {
+        super();
         this.audioContext = audioContext;
-        this.audioElement = document.getElementById("audio-player");
-        this.sourceNode = this.audioContext.createMediaElementSource(this.audioElement);
+        // a stable output node, so the rest of the graph never sees the per-play source nodes
+        this.sourceNode = audioContext.createGain();
+        this.buffer = null;
+        this.source = null;
+        this.paused = true;
+        this.rate = 1;
+        this.offset = 0; // song position (s) at the last anchor
+        this.startedAt = 0; // context time of the last anchor
+        this.loadToken = 0;
+        this.ticker = null;
+        // play through the iOS silent switch, like a media element does
+        if (navigator.audioSession) navigator.audioSession.type = "playback";
     }
 
-    loadSong(url) {
-        this.audioElement.src = url;
+    emit(type) {
+        this.dispatchEvent(new Event(type));
+    }
+
+    async loadSong(url) {
+        const token = ++this.loadToken;
+        this.stopSource();
+        this.stopTicker();
+        const wasPlaying = !this.paused;
+        this.paused = true;
+        this.buffer = null; // release the previous song's samples before decoding the next
+        this.offset = 0;
+        if (wasPlaying) this.emit("pause");
+
+        const data = await (await fetch(url)).arrayBuffer();
+        const buffer = await this.audioContext.decodeAudioData(data);
+        if (token !== this.loadToken) return; // a newer load superseded this one
+        this.buffer = buffer;
+        this.emit("loadedmetadata");
+        this.emit("timeupdate");
+    }
+
+    get duration() {
+        return this.buffer ? this.buffer.duration : NaN;
+    }
+
+    get currentTime() {
+        if (!this.buffer) return 0;
+        if (this.paused) return this.offset;
+        const elapsed = (this.audioContext.currentTime - this.startedAt) * this.rate;
+        return Math.min(this.buffer.duration, this.offset + elapsed);
+    }
+
+    set volume(value) {
+        this.sourceNode.gain.value = value;
+    }
+
+    startSource() {
+        const source = this.audioContext.createBufferSource();
+        source.buffer = this.buffer;
+        source.playbackRate.value = this.rate;
+        source.connect(this.sourceNode);
+        source.onended = () => {
+            if (this.source !== source) return; // stopped by us (pause, seek, new song), not the end of the song
+            this.source = null;
+            this.paused = true;
+            this.offset = this.buffer.duration;
+            this.stopTicker();
+            this.emit("timeupdate");
+            this.emit("ended");
+        };
+        this.source = source;
+        this.startedAt = this.audioContext.currentTime;
+        source.start(0, this.offset);
+    }
+
+    stopSource() {
+        const source = this.source;
+        if (!source) return;
+        this.source = null; // detach first so onended knows this was deliberate
+        source.stop();
+        source.disconnect();
+    }
+
+    startTicker() {
+        this.stopTicker();
+        this.ticker = setInterval(() => this.emit("timeupdate"), 250);
+    }
+
+    stopTicker() {
+        clearInterval(this.ticker);
+        this.ticker = null;
     }
 
     play() {
-        if (this.audioElement) {
-            this.audioElement.play();
-        }
+        if (!this.buffer || !this.paused) return;
+        if (this.offset >= this.buffer.duration) this.offset = 0;
+        if (this.audioContext.state === "suspended") this.audioContext.resume();
+        this.paused = false;
+        this.startSource();
+        this.startTicker();
+        this.emit("play");
     }
 
     pause() {
-        if (this.audioElement) {
-            this.audioElement.pause();
-        }
+        if (!this.buffer || this.paused) return;
+        this.offset = this.currentTime;
+        this.stopSource();
+        this.stopTicker();
+        this.paused = true;
+        this.emit("pause");
+        this.emit("timeupdate");
     }
 
     seek(timeInSeconds) {
-        if (this.audioElement) {
-            this.audioElement.currentTime = timeInSeconds;
+        if (!this.buffer) return;
+        const target = Math.max(0, Math.min(timeInSeconds, this.buffer.duration));
+        this.offset = target;
+        if (!this.paused) {
+            this.stopSource();
+            this.startSource();
         }
+        this.emit("timeupdate");
     }
 
     get playbackRate() {
-        return this.audioElement ? this.audioElement.playbackRate : null;
+        return this.rate;
     }
 
     set playbackRate(rate) {
-        if (this.audioElement) {
-            this.audioElement.playbackRate = rate;
-        }
+        // re-anchor so currentTime stays continuous across the change
+        this.offset = this.currentTime;
+        this.startedAt = this.audioContext.currentTime;
+        this.rate = rate;
+        if (this.source) this.source.playbackRate.value = rate;
     }
 
     get node() {
@@ -251,6 +353,11 @@ async function createVocoderNode() {
     });
 }
 
+// Speed resamples the audio (pitch moves with it), so the vocoder shifts by pitch / speed
+function applyPitch(semitones) {
+    pitchFactorParam.value = Math.pow(2, semitones / 12) / audioPlayer.playbackRate;
+}
+
 // Switch algorithm mid-song: replace the worklet node in the graph, keeping the pitch setting
 async function swapAlgorithm() {
     if (!phaseVocoderNode) return;
@@ -266,7 +373,29 @@ async function swapAlgorithm() {
     pitchFactorParam.value = pitch;
 }
 
+// Loads can't overlap: each one rebuilds the audio graph and reads the previous load's equalizer. Taps that arrive
+// during a load collapse into a single reload of whatever song is current once it finishes.
+let loading = false;
+let reloadRequested = false;
 async function loadSong(initial) {
+    if (loading) {
+        reloadRequested = true;
+        return;
+    }
+    loading = true;
+    try {
+        await loadSongNow(initial);
+        while (reloadRequested) {
+            reloadRequested = false;
+            await loadSongNow(false);
+        }
+    } finally {
+        loading = false;
+        reloadRequested = false; // don't carry a request over if a load threw
+    }
+}
+
+async function loadSongNow(initial) {
     if (audioContext.audioWorklet === undefined) {
         let $noWorklet = document.querySelector("#no-worklet");
         $noWorklet.style.display = "block";
@@ -297,8 +426,7 @@ async function loadSong(initial) {
         );
     }
 
-    audioPlayer.loadSong(playlist.currentSong.path);
-    await setupEngine(initial);
+    await Promise.all([audioPlayer.loadSong(playlist.currentSong.path), setupEngine(initial)]);
 
     //setting up pitch slider
     pitchFactorParam = phaseVocoderNode.parameters.get("pitchFactor");
@@ -306,7 +434,7 @@ async function loadSong(initial) {
         let oldPitch = $pitchvalueLabel.innerHTML;
         let oldSpeed = $valueLabel.innerHTML;
         audioPlayer.playbackRate = Math.pow(2, parseFloat(oldSpeed) / 12);
-        pitchFactorParam.value = Math.pow(2, parseFloat(oldPitch) / 12);
+        applyPitch(parseFloat(oldPitch));
         equalizer.setGains(oldEqualizer);
     }
 
@@ -359,14 +487,14 @@ document.addEventListener("keydown", (event) => {
     } else if (keyName === "ArrowRight") {
         event.preventDefault();
         pitchFactor = parseFloat($pitchvalueLabel.innerHTML) + 1;
-        pitchFactorParam.value = Math.pow(2, pitchFactor / 12);
+        applyPitch(pitchFactor);
         $pitchSlider.value = pitchFactor;
         $pitchvalueLabel.innerHTML = pitchFactor;
         updatePitchKey();
     } else if (keyName === "ArrowLeft") {
         event.preventDefault();
         pitchFactor = parseFloat($pitchvalueLabel.innerHTML) - 1;
-        pitchFactorParam.value = Math.pow(2, pitchFactor / 12);
+        applyPitch(pitchFactor);
         $pitchSlider.value = pitchFactor;
         $pitchvalueLabel.innerHTML = pitchFactor;
         updatePitchKey();
@@ -377,7 +505,7 @@ document.addEventListener("keydown", (event) => {
         let id = playlist.currentSong.id;
         window.deleteSong(id);
     } else if (keyName === "p") {
-        if (audioPlayer.audioElement.paused) {
+        if (audioPlayer.paused) {
             audioPlayer.play();
         } else {
             audioPlayer.pause();
@@ -387,14 +515,13 @@ document.addEventListener("keydown", (event) => {
     }
 });
 
-let audioElement = audioPlayer.audioElement;
-audioElement.addEventListener("play", function () {
+audioPlayer.addEventListener("play", function () {
     if (audioContext.state === "suspended") {
         audioContext.resume();
     }
 });
 
-audioElement.addEventListener("ended", function () {
+audioPlayer.addEventListener("ended", function () {
     playlist.nextSong();
     loadSong(false);
 });
@@ -413,13 +540,13 @@ function formatTime(seconds) {
 }
 
 function syncPlayButton() {
-    const paused = audioElement.paused;
+    const paused = audioPlayer.paused;
     $playBtn.innerHTML = paused ? "&#9654;&#xFE0E;" : "&#10074;&#10074;";
     $playBtn.setAttribute("aria-label", paused ? "Play" : "Pause");
 }
 
 $playBtn.addEventListener("click", () => {
-    if (audioElement.paused) audioPlayer.play();
+    if (audioPlayer.paused) audioPlayer.play();
     else audioPlayer.pause();
 });
 document.querySelector("#next-btn").addEventListener("click", () => {
@@ -430,19 +557,19 @@ document.querySelector("#prev-btn").addEventListener("click", () => {
     playlist.previousSong();
     loadSong(false);
 });
-audioElement.addEventListener("play", syncPlayButton);
-audioElement.addEventListener("pause", syncPlayButton);
-audioElement.addEventListener("loadedmetadata", () => {
-    $seek.max = audioElement.duration;
-    $timeTotal.textContent = formatTime(audioElement.duration);
+audioPlayer.addEventListener("play", syncPlayButton);
+audioPlayer.addEventListener("pause", syncPlayButton);
+audioPlayer.addEventListener("loadedmetadata", () => {
+    $seek.max = audioPlayer.duration;
+    $timeTotal.textContent = formatTime(audioPlayer.duration);
 });
-audioElement.addEventListener("timeupdate", () => {
-    if (!$seek.matches(":active")) $seek.value = audioElement.currentTime;
-    $timeCurrent.textContent = formatTime(audioElement.currentTime);
+audioPlayer.addEventListener("timeupdate", () => {
+    if (!$seek.matches(":active")) $seek.value = audioPlayer.currentTime;
+    $timeCurrent.textContent = formatTime(audioPlayer.currentTime);
 });
 $seek.addEventListener("input", () => audioPlayer.seek(parseFloat($seek.value)));
 document.querySelector("#volume").addEventListener("input", function () {
-    audioElement.volume = parseFloat(this.value);
+    audioPlayer.volume = parseFloat(this.value);
 });
 
 let $speedSlider = document.querySelector("#speed");
@@ -453,6 +580,7 @@ $speedSlider.addEventListener(
         speedFactor = Math.pow(2, parseFloat(this.value) / 12);
         // playControl.speed = speedFactor;
         audioPlayer.playbackRate = speedFactor;
+        applyPitch(parseFloat($pitchvalueLabel.innerHTML));
         $valueLabel.innerHTML = this.value;
     },
     false,
@@ -464,7 +592,7 @@ $pitchSlider.addEventListener(
     "input",
     function () {
         pitchFactor = this.value;
-        pitchFactorParam.value = Math.pow(2, parseFloat(this.value) / 12);
+        applyPitch(parseFloat(this.value));
         $pitchvalueLabel.innerHTML = this.value;
         updatePitchKey();
     },
