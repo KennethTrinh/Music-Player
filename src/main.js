@@ -1,4 +1,5 @@
 import EqualizerNode from "./equalizer.js";
+import { detectKey, keyFullName, keyLabel } from "./key-detect.js";
 
 class AudioPlayer {
     constructor(audioContext) {
@@ -60,6 +61,7 @@ class Song {
         this.name = name;
         this.path = path;
         this.artwork = artwork;
+        this.key = null; // detected { tonic, isMinor }, filled in later; never persisted
     }
 }
 
@@ -277,6 +279,7 @@ async function loadSong(initial) {
     }
     $("h1").text(playlist.currentSong.name);
     updateNowPlayingArt(playlist.currentSong.artwork);
+    updatePitchKey();
 
     // Highlight the current song
     $(".playlist-row").removeClass("active");
@@ -359,12 +362,14 @@ document.addEventListener("keydown", (event) => {
         pitchFactorParam.value = Math.pow(2, pitchFactor / 12);
         $pitchSlider.value = pitchFactor;
         $pitchvalueLabel.innerHTML = pitchFactor;
+        updatePitchKey();
     } else if (keyName === "ArrowLeft") {
         event.preventDefault();
         pitchFactor = parseFloat($pitchvalueLabel.innerHTML) - 1;
         pitchFactorParam.value = Math.pow(2, pitchFactor / 12);
         $pitchSlider.value = pitchFactor;
         $pitchvalueLabel.innerHTML = pitchFactor;
+        updatePitchKey();
     } else if (keyName === "r") {
         let id = playlist.currentSong.id;
         window.repeatSong(id);
@@ -461,6 +466,7 @@ $pitchSlider.addEventListener(
         pitchFactor = this.value;
         pitchFactorParam.value = Math.pow(2, parseFloat(this.value) / 12);
         $pitchvalueLabel.innerHTML = this.value;
+        updatePitchKey();
     },
     false,
 );
@@ -492,20 +498,34 @@ $frequencySelect.addEventListener(
     false,
 );
 
-function initAudio(data) {
-    let audioContext = new AudioContext();
-    let audioRequest = new XMLHttpRequest();
-    let dfd = jQuery.Deferred();
+// Songs are analysed one at a time so only one decoded buffer is in memory; keys are not stored.
+// Key detection is optional: whatever goes wrong in here is logged and the player carries on without a key.
+let keyQueue = Promise.resolve();
+function queueKey(song, row, getArrayBuffer) {
+    keyQueue = keyQueue.then(async () => {
+        try {
+            const key = await detectKey(await getArrayBuffer());
+            if (!key) return;
+            song.key = key;
+            row.querySelector(".song-key").textContent = keyLabel(key);
+            if (playlist.currentSong === song) updatePitchKey();
+        } catch (error) {
+            console.warn("Key detection failed", error);
+        }
+    });
+}
 
-    audioRequest.open("GET", URL.createObjectURL(data.files[0]), true);
-    audioRequest.responseType = "arraybuffer";
-    audioRequest.onload = function () {
-        audioContext.decodeAudioData(audioRequest.response, function (buffer) {
-            dfd.resolve(buffer);
-        });
-    };
-    audioRequest.send();
-    return dfd.promise();
+// The pitch slider shows the detected key moved by the current pitch shift, which is just modular arithmetic.
+function updatePitchKey() {
+    try {
+        const el = document.getElementById("pitch-key");
+        const key = playlist.currentSong?.key;
+        const shift = parseFloat($pitchvalueLabel.textContent) || 0;
+        el.textContent = key ? keyFullName(key, shift) : "";
+        el.title = key && shift ? `Original key: ${keyFullName(key)}` : "";
+    } catch (error) {
+        console.warn("Could not show key", error);
+    }
 }
 
 window.extract = async (data) => {
@@ -529,26 +549,26 @@ window.extract = async (data) => {
             console.warn("Could not extract artwork for", file_name, error);
         }
 
-        $.when(initAudio(data)).done(function (b) {
-            const artworkHtml = artworkUrl
-                ? `<img class="playlist-artwork" src="${artworkUrl}" alt="Album art">`
-                : "";
-            $(".playlist").append(
-                `<div class=playlist-row id=${playlist.songs.length} onclick="nav(this.id)">
-                    <span class="repeat-emoji" style="display: none; position: absolute; top: 5px; right: 5px; font-size: 20px;">🔁</span>
-                    ${artworkHtml}
-                    <span class="song-name">${file_name}</span>
-                    <button class="delete-button" onclick="deleteSong(this.parentElement.id); event.stopPropagation();">Delete</button>
-                    <button class="repeat-button" onclick="repeatSong(this.parentElement.id); event.stopPropagation();">Repeat</button>
-                </div>`,
-            );
-            playlist.addSong(
-                playlist.songs.length,
-                file_name,
-                URL.createObjectURL(file),
-                artworkUrl,
-            );
-        });
+        const artworkHtml = artworkUrl
+            ? `<img class="playlist-artwork" src="${artworkUrl}" alt="Album art">`
+            : "";
+        $(".playlist").append(
+            `<div class=playlist-row id=${playlist.songs.length} onclick="nav(this.id)">
+                <span class="repeat-emoji" style="display: none; position: absolute; top: 5px; right: 5px; font-size: 20px;">🔁</span>
+                ${artworkHtml}
+                <span class="song-name">${file_name}</span>
+                <span class="song-key"></span>
+                <button class="delete-button" onclick="deleteSong(this.parentElement.id); event.stopPropagation();">Delete</button>
+                <button class="repeat-button" onclick="repeatSong(this.parentElement.id); event.stopPropagation();">Repeat</button>
+            </div>`,
+        );
+        playlist.addSong(
+            playlist.songs.length,
+            file_name,
+            URL.createObjectURL(file),
+            artworkUrl,
+        );
+        queueKey(playlist.songs[playlist.songs.length - 1], $(".playlist-row").last()[0], () => file.arrayBuffer());
     }
 };
 
@@ -630,9 +650,13 @@ window.onload = async function () {
                 <span class="repeat-emoji" style="display: none; position: absolute; top: 5px; right: 5px; font-size: 20px;">🔁</span>
                 ${artworkHtml}
                 <span class="song-name">${song.name}</span>
+                <span class="song-key"></span>
                 <button class="delete-button" onclick="deleteSong(this.parentElement.id); event.stopPropagation();">Delete</button>
                 <button class="repeat-button" onclick="repeatSong(this.parentElement.id); event.stopPropagation();">Repeat</button>
             </div>`,
+        );
+        queueKey(playlist.songs[playlist.songs.length - 1], $(".playlist-row").last()[0], async () =>
+            (await fetch(song.path)).arrayBuffer(),
         );
     }
 
