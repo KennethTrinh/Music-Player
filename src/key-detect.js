@@ -10,36 +10,94 @@ const WINDOW_SAMPLES = 60 * SAMPLE_RATE;
 const WORKER_URL = "dist/keycnn-worker.js";
 const WEIGHTS_URL = "models/keycnn.bin";
 
+const TIMEOUT_MS = 120000;
+const NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+
 let worker = null;
 let nextId = 0;
 const pending = new Map();
+// Set when the worker script or the weights can't be loaded: every later song would fail the same way, so stop trying.
+let unavailable = false;
+
+function failAll(error, fatal) {
+    if (fatal) {
+        unavailable = true;
+        worker?.terminate();
+        worker = null;
+    }
+    for (const { reject } of pending.values()) reject(error);
+    pending.clear();
+}
 
 function getWorker() {
     if (!worker) {
         worker = new Worker(new URL(WORKER_URL, document.baseURI));
         worker.onmessage = ({ data }) => {
-            const { resolve, reject } = pending.get(data.id);
+            const request = pending.get(data.id);
+            if (!request) return;
             pending.delete(data.id);
-            if (data.error) reject(new Error(data.error));
-            else resolve(data);
+            if (data.fatal) {
+                unavailable = true;
+                worker?.terminate();
+                worker = null;
+            }
+            if (data.error) request.reject(new Error(data.error));
+            else request.resolve(data);
         };
+        worker.onerror = (event) => failAll(new Error(event.message || "key worker failed to load"), true);
+        worker.onmessageerror = () => failAll(new Error("key worker message error"), true);
     }
     return worker;
+}
+
+function runInWorker(samples) {
+    return new Promise((resolve, reject) => {
+        const id = nextId++;
+        const timer = setTimeout(() => {
+            pending.delete(id);
+            reject(new Error("key detection timed out"));
+        }, TIMEOUT_MS);
+        pending.set(id, {
+            resolve: (value) => (clearTimeout(timer), resolve(value)),
+            reject: (error) => (clearTimeout(timer), reject(error)),
+        });
+        getWorker().postMessage(
+            { id, samples, weightsUrl: new URL(WEIGHTS_URL, document.baseURI).href },
+            [samples.buffer],
+        );
+    });
 }
 
 /** "Bb major" -> { tonic: 10, isMinor: false, name: "Bb" }, "F# minor" -> name "F#m". */
 function parseLabel(label) {
     const [note, mode] = label.split(" ");
-    const names = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
     const spellings = ["C", "Db", "D", "D#", "E", "F", "Gb", "G", "G#", "A", "A#", "B"];
-    const tonic = names.includes(note) ? names.indexOf(note) : spellings.indexOf(note);
+    const tonic = NAMES.includes(note) ? NAMES.indexOf(note) : spellings.indexOf(note);
     const isMinor = mode === "minor";
-    return { tonic, isMinor, name: names[tonic] + (isMinor ? "m" : "") };
+    return { tonic, isMinor, name: NAMES[tonic] + (isMinor ? "m" : "") };
 }
 
-/** Detects the key of an encoded audio file (ArrayBuffer, consumed). Resolves null for silence. */
+/** Same as keyLabel but spelled out, e.g. "A minor", "Eb major". */
+export function keyFullName(key, semitones = 0) {
+    const tonic = (((key.tonic + Math.round(semitones)) % 12) + 12) % 12;
+    return `${NAMES[tonic]} ${key.isMinor ? "minor" : "major"}`;
+}
+
+/** Name of `key` ({ tonic, isMinor }) after pitch-shifting by `semitones`, e.g. (Am, +3) -> "Cm". */
+export function keyLabel(key, semitones = 0) {
+    const tonic = (((key.tonic + Math.round(semitones)) % 12) + 12) % 12;
+    return NAMES[tonic] + (key.isMinor ? "m" : "");
+}
+
+/**
+ * Detects the key of an encoded audio file (ArrayBuffer, consumed). Resolves null when there is nothing to report
+ * (silence, or the browser / weights can't do it); rejects only for a file that fails to decode or analyse.
+ */
 export async function detectKey(arrayBuffer) {
-    const decoded = await new OfflineAudioContext(1, 1, SAMPLE_RATE).decodeAudioData(arrayBuffer);
+    const Offline = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (unavailable || !Offline || typeof Worker === "undefined") return null;
+
+    const decoded = await new Offline(1, 1, SAMPLE_RATE).decodeAudioData(arrayBuffer);
     const length = Math.min(decoded.length, WINDOW_SAMPLES);
     const offset = Math.floor((decoded.length - length) / 2);
 
@@ -50,14 +108,8 @@ export async function detectKey(arrayBuffer) {
     }
     if (!mono.some((s) => Math.abs(s) > 1e-4)) return null;
 
-    const id = nextId++;
-    const result = await new Promise((resolve, reject) => {
-        pending.set(id, { resolve, reject });
-        getWorker().postMessage(
-            { id, samples: mono, weightsUrl: new URL(WEIGHTS_URL, document.baseURI).href },
-            [mono.buffer],
-        );
-    });
+    const result = await runInWorker(mono);
     const best = result.probabilities.reduce((b, p, i, all) => (p > all[b] ? i : b), 0);
-    return { ...parseLabel(result.labels[best]), confidence: result.probabilities[best] };
+    const key = parseLabel(result.labels[best]);
+    return key.tonic < 0 ? null : { ...key, confidence: result.probabilities[best] };
 }

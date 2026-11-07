@@ -23,7 +23,7 @@
     "build": "npm run generate-manifest && npm run build-main && npm run build-equalizer && npm run build-audio-worklet && npm run build-pghi-worklet && npm run build-keycnn-worker",
     "watch": "npm-run-all --parallel watch-main watch-equalizer watch-audio-worklet watch-pghi-worklet",
     "start": "npx http-server -c-1",
-    "test": "node test/pghi.test.js && node test/keycnn.test.js",
+    "test": "node test/pghi.test.js && node test/keycnn.test.js && node test/key-label.test.js",
     "publish": "npm run build-audio-worklet && npm run build-min && npm publish"
   },
   "keywords": [
