@@ -1,4 +1,5 @@
 import EqualizerNode from "./equalizer.js";
+import MediaSessionController from "./media-session.js";
 import { detectKey, keyFullName, keyLabel } from "./key-detect.js";
 
 /**
@@ -20,6 +21,7 @@ class AudioPlayer extends EventTarget {
         this.offset = 0; // song position (s) at the last anchor
         this.startedAt = 0; // context time of the last anchor
         this.loadToken = 0;
+        this.loading = false; // true from loadSong until the new song is decoded
         this.ticker = null;
         // play through the iOS silent switch, like a media element does
         if (navigator.audioSession) navigator.audioSession.type = "playback";
@@ -31,6 +33,7 @@ class AudioPlayer extends EventTarget {
 
     async loadSong(url) {
         const token = ++this.loadToken;
+        this.loading = true;
         this.stopSource();
         this.stopTicker();
         const wasPlaying = !this.paused;
@@ -42,6 +45,7 @@ class AudioPlayer extends EventTarget {
         const data = await (await fetch(url)).arrayBuffer();
         const buffer = await this.audioContext.decodeAudioData(data);
         if (token !== this.loadToken) return; // a newer load superseded this one
+        this.loading = false;
         this.buffer = buffer;
         this.emit("loadedmetadata");
         this.emit("timeupdate");
@@ -127,6 +131,7 @@ class AudioPlayer extends EventTarget {
             this.stopSource();
             this.startSource();
         }
+        this.emit("seeked");
         this.emit("timeupdate");
     }
 
@@ -140,6 +145,7 @@ class AudioPlayer extends EventTarget {
         this.startedAt = this.audioContext.currentTime;
         this.rate = rate;
         if (this.source) this.source.playbackRate.value = rate;
+        this.emit("ratechange");
     }
 
     get node() {
@@ -408,6 +414,7 @@ async function loadSongNow(initial) {
     }
     $("h1").text(playlist.currentSong.name);
     updateNowPlayingArt(playlist.currentSong.artwork);
+    mediaSession.setMetadata(playlist.currentSong);
     updatePitchKey();
 
     // Highlight the current song
@@ -549,14 +556,18 @@ $playBtn.addEventListener("click", () => {
     if (audioPlayer.paused) audioPlayer.play();
     else audioPlayer.pause();
 });
-document.querySelector("#next-btn").addEventListener("click", () => {
+function playNext() {
     playlist.nextSong();
     loadSong(false);
-});
-document.querySelector("#prev-btn").addEventListener("click", () => {
+}
+function playPrevious() {
     playlist.previousSong();
     loadSong(false);
-});
+}
+document.querySelector("#next-btn").addEventListener("click", playNext);
+document.querySelector("#prev-btn").addEventListener("click", playPrevious);
+
+const mediaSession = new MediaSessionController(audioPlayer, { previous: playPrevious, next: playNext });
 audioPlayer.addEventListener("play", syncPlayButton);
 audioPlayer.addEventListener("pause", syncPlayButton);
 audioPlayer.addEventListener("loadedmetadata", () => {
