@@ -528,22 +528,6 @@ function updatePitchKey() {
     }
 }
 
-function initAudio(data) {
-    let audioContext = new AudioContext();
-    let audioRequest = new XMLHttpRequest();
-    let dfd = jQuery.Deferred();
-
-    audioRequest.open("GET", URL.createObjectURL(data.files[0]), true);
-    audioRequest.responseType = "arraybuffer";
-    audioRequest.onload = function () {
-        audioContext.decodeAudioData(audioRequest.response, function (buffer) {
-            dfd.resolve(buffer);
-        });
-    };
-    audioRequest.send();
-    return dfd.promise();
-}
-
 window.extract = async (data) => {
     let files = data.files;
     for (let i = 0; i < files.length; i++) {
@@ -565,28 +549,26 @@ window.extract = async (data) => {
             console.warn("Could not extract artwork for", file_name, error);
         }
 
-        $.when(initAudio(data)).done(function (b) {
-            const artworkHtml = artworkUrl
-                ? `<img class="playlist-artwork" src="${artworkUrl}" alt="Album art">`
-                : "";
-            $(".playlist").append(
-                `<div class=playlist-row id=${playlist.songs.length} onclick="nav(this.id)">
-                    <span class="repeat-emoji" style="display: none; position: absolute; top: 5px; right: 5px; font-size: 20px;">🔁</span>
-                    ${artworkHtml}
-                    <span class="song-name">${file_name}</span>
-                    <span class="song-key"></span>
-                    <button class="delete-button" onclick="deleteSong(this.parentElement.id); event.stopPropagation();">Delete</button>
-                    <button class="repeat-button" onclick="repeatSong(this.parentElement.id); event.stopPropagation();">Repeat</button>
-                </div>`,
-            );
-            playlist.addSong(
-                playlist.songs.length,
-                file_name,
-                URL.createObjectURL(file),
-                artworkUrl,
-            );
-            queueKey(playlist.songs[playlist.songs.length - 1], $(".playlist-row").last()[0], () => file.arrayBuffer());
-        });
+        const artworkHtml = artworkUrl
+            ? `<img class="playlist-artwork" src="${artworkUrl}" alt="Album art">`
+            : "";
+        $(".playlist").append(
+            `<div class=playlist-row id=${playlist.songs.length} onclick="nav(this.id)">
+                <span class="repeat-emoji" style="display: none; position: absolute; top: 5px; right: 5px; font-size: 20px;">🔁</span>
+                ${artworkHtml}
+                <span class="song-name">${file_name}</span>
+                <span class="song-key"></span>
+                <button class="delete-button" onclick="deleteSong(this.parentElement.id); event.stopPropagation();">Delete</button>
+                <button class="repeat-button" onclick="repeatSong(this.parentElement.id); event.stopPropagation();">Repeat</button>
+            </div>`,
+        );
+        playlist.addSong(
+            playlist.songs.length,
+            file_name,
+            URL.createObjectURL(file),
+            artworkUrl,
+        );
+        queueKey(playlist.songs[playlist.songs.length - 1], $(".playlist-row").last()[0], () => file.arrayBuffer());
     }
 };
 
