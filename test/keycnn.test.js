@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { conv2d, elu, maxPool2, predict } from "../src/keycnn.js";
+import { conv2d, conv2dGeneric, elu, maxPool2, predict } from "../src/keycnn.js";
 
 // 3x3 ones kernel, pad 1, on a 3x3 ramp: each output is the sum of its in-bounds neighbourhood.
 const x = Float32Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9]);
@@ -16,6 +16,19 @@ assert.deepEqual([...y.data], [0, 0, 0, 0, 1, 2, 0, 4, 5]);
 y = conv2d(new Float32Array(18).fill(1), 2, 3, 3, new Float32Array(18).fill(1), [0], 1, 3, 3, 0);
 assert.equal(y.h, 1);
 assert.deepEqual([...y.data], [18]);
+
+// The unrolled 3x3 path must match the reference on random data, with and without padding, odd sizes included.
+let seed = 1;
+const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32) * 2 - 1;
+for (const [inC, outC, h, w, pad] of [[3, 8, 7, 9, 1], [5, 4, 6, 5, 0], [1, 12, 10, 13, 1]]) {
+    const input = Float32Array.from({ length: inC * h * w }, random);
+    const weight = Float32Array.from({ length: outC * inC * 9 }, random);
+    const bias = Float32Array.from({ length: outC }, random);
+    const fast = conv2d(input, inC, h, w, weight, bias, outC, 3, 3, pad);
+    const ref = conv2dGeneric(input, inC, h, w, weight, bias, outC, 3, 3, pad);
+    assert.deepEqual([fast.h, fast.w], [ref.h, ref.w]);
+    for (let i = 0; i < ref.data.length; i++) assert.ok(Math.abs(fast.data[i] - ref.data[i]) < 1e-4, `conv mismatch at ${i}`);
+}
 
 const e = Float32Array.from([1, -1]);
 elu(e);
