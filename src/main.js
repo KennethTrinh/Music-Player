@@ -1,4 +1,5 @@
 import EqualizerNode from "./equalizer.js";
+import { detectKey } from "./key-detect.js";
 
 class AudioPlayer {
     constructor(audioContext) {
@@ -492,6 +493,21 @@ $frequencySelect.addEventListener(
     false,
 );
 
+// Songs are analysed one at a time so only one decoded buffer is in memory; keys are not stored.
+let keyQueue = Promise.resolve();
+function queueKey(row, getArrayBuffer) {
+    keyQueue = keyQueue.then(async () => {
+        try {
+            const key = await detectKey(await getArrayBuffer());
+            if (key) {
+                row.querySelector(".song-key").textContent = key.name;
+            }
+        } catch (error) {
+            console.warn("Key detection failed", error);
+        }
+    });
+}
+
 function initAudio(data) {
     let audioContext = new AudioContext();
     let audioRequest = new XMLHttpRequest();
@@ -538,6 +554,7 @@ window.extract = async (data) => {
                     <span class="repeat-emoji" style="display: none; position: absolute; top: 5px; right: 5px; font-size: 20px;">🔁</span>
                     ${artworkHtml}
                     <span class="song-name">${file_name}</span>
+                    <span class="song-key"></span>
                     <button class="delete-button" onclick="deleteSong(this.parentElement.id); event.stopPropagation();">Delete</button>
                     <button class="repeat-button" onclick="repeatSong(this.parentElement.id); event.stopPropagation();">Repeat</button>
                 </div>`,
@@ -548,6 +565,7 @@ window.extract = async (data) => {
                 URL.createObjectURL(file),
                 artworkUrl,
             );
+            queueKey($(".playlist-row").last()[0], () => file.arrayBuffer());
         });
     }
 };
@@ -630,10 +648,12 @@ window.onload = async function () {
                 <span class="repeat-emoji" style="display: none; position: absolute; top: 5px; right: 5px; font-size: 20px;">🔁</span>
                 ${artworkHtml}
                 <span class="song-name">${song.name}</span>
+                <span class="song-key"></span>
                 <button class="delete-button" onclick="deleteSong(this.parentElement.id); event.stopPropagation();">Delete</button>
                 <button class="repeat-button" onclick="repeatSong(this.parentElement.id); event.stopPropagation();">Repeat</button>
             </div>`,
         );
+        queueKey($(".playlist-row").last()[0], async () => (await fetch(song.path)).arrayBuffer());
     }
 
     $(".sound-wave").append(Array.from({ length: 100 }, () => $("<div>").addClass("bar")));
