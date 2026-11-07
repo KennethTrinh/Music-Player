@@ -563,11 +563,21 @@ audioPlayer.addEventListener("loadedmetadata", () => {
     $seek.max = audioPlayer.duration;
     $timeTotal.textContent = formatTime(audioPlayer.duration);
 });
+// Dragging only moves the thumb and the time label; the song seeks on release
+let scrubbing = false;
 audioPlayer.addEventListener("timeupdate", () => {
-    if (!$seek.matches(":active")) $seek.value = audioPlayer.currentTime;
+    if (scrubbing) return;
+    $seek.value = audioPlayer.currentTime;
     $timeCurrent.textContent = formatTime(audioPlayer.currentTime);
 });
-$seek.addEventListener("input", () => audioPlayer.seek(parseFloat($seek.value)));
+$seek.addEventListener("input", () => {
+    scrubbing = true;
+    $timeCurrent.textContent = formatTime(parseFloat($seek.value));
+});
+$seek.addEventListener("change", () => {
+    scrubbing = false;
+    audioPlayer.seek(parseFloat($seek.value));
+});
 document.querySelector("#volume").addEventListener("input", function () {
     audioPlayer.volume = parseFloat(this.value);
 });
