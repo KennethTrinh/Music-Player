@@ -461,13 +461,10 @@ function updateNowPlayingArt(artworkUrl) {
     }
 }
 
+// The graph is built once: the player's output node is stable across songs, so a song change only swaps the source.
+// Rebuilding it per song leaked a vocoder (several MB of buffers) every time.
 async function setupEngine(initial) {
-    if (!initial) {
-        playerEngine.disconnect();
-        phaseVocoderNode.disconnect();
-        equalizer.disconnect();
-        analyser.disconnect();
-    }
+    if (!initial) return;
     playerEngine = audioPlayer.node;
 
     phaseVocoderNode = await createVocoderNode();
