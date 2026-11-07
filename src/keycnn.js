@@ -4,8 +4,7 @@
  * (0.67 M parameters), so plain Float32Array loops are enough and no ML runtime is needed.
  *
  * Input is 60 s at 44.1 kHz mono. Pipeline: Hann STFT (8192 points, 5 frames/s, centred) -> log-frequency filterbank
- * -> log10(x + 1) -> conv/ELU/max-pool blocks -> global average -> softmax over 24 keys. Same as pitchify's Core ML
- * model (tools/export_keycnn_web.py writes the weight file, with batch norm folded into the convolutions).
+ * -> log10(x + 1) -> conv/ELU/max-pool blocks -> global average -> softmax over 24 keys.
  *
  * Weight file: u32 LE header length, UTF-8 JSON header, then float16 LE tensors in the order the header lists.
  */
@@ -100,7 +99,8 @@ export function maxPool2(x, c, h, w) {
 function spectrogram(samples, frames, bins) {
     const fft = new FFT(FFT_SIZE);
     const window = new Float32Array(FFT_SIZE);
-    for (let i = 0; i < FFT_SIZE; i++) window[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (FFT_SIZE - 1));
+    for (let i = 0; i < FFT_SIZE; i++)
+        window[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (FFT_SIZE - 1));
     const frame = new Float32Array(FFT_SIZE);
     const spec = fft.createComplexArray();
     const count = Math.max(1, Math.ceil(samples.length / HOP));
@@ -115,7 +115,8 @@ function spectrogram(samples, frames, bins) {
         for (let k = 0; k < bins; k++) out[f * bins + k] = Math.hypot(spec[2 * k], spec[2 * k + 1]);
     }
     // A short track fills the model's input by cycling through its frames.
-    for (let f = count; f < frames; f++) out.copyWithin(f * bins, (f % count) * bins, (f % count) * bins + bins);
+    for (let f = count; f < frames; f++)
+        out.copyWithin(f * bins, (f % count) * bins, (f % count) * bins + bins);
     return out;
 }
 
@@ -140,7 +141,18 @@ export function predict(model, samples) {
     let h = frames;
     let w = bands;
     for (const layer of model.layers) {
-        const y = conv2d(x, c, h, w, layer.weight, layer.bias, layer.out, layer.kt, layer.kf, layer.pad);
+        const y = conv2d(
+            x,
+            c,
+            h,
+            w,
+            layer.weight,
+            layer.bias,
+            layer.out,
+            layer.kt,
+            layer.kf,
+            layer.pad,
+        );
         elu(y.data);
         ({ data: x, h, w } = layer.pool ? maxPool2(y.data, layer.out, y.h, y.w) : y);
         c = layer.out;
