@@ -299,5 +299,11 @@ are propagated in time and their weaker neighbours inherit phase from them. Bins
 **Tests.** `npm test` runs `test/pghi.test.js`, which feeds synthetic audio through the shifter in 128-sample blocks and checks pitch accuracy,
 spectral purity, level, stability under live pitch changes, silence/noise/impulse handling and per-block cost.
 
+**Browser tests.** `npm run build` first, then `npm run test:browser` drives a headless Chrome through play, pause, next (including
+pressing it while the first song is still loading), previous, pitch and speed. `npm run test:memory` plays through 40 song changes and
+checks the page's memory: under 400 MB once garbage is collected, under 700 MB at the transient peak, and no growth per song change. They
+need Node 22 and a Chrome install (set `CHROME_PATH` if it isn't in a standard place), and run in CI as the `browser-test` job. Memory is
+read with `footprint` on macOS and `/proc/<pid>/smaps_rollup` on Linux.
+
 **Tuning.** `FRAME_SIZE`, `ANALYSIS_HOP` and `WINDOW_EDGE_HEIGHT` at the top of `src/pghi.js` trade latency and CPU against frequency
 resolution and phase quality. They were chosen from the papers' settings and the measurements above, not tuned by ear.

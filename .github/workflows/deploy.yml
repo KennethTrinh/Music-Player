@@ -34,6 +34,27 @@ jobs:
       # catches bundling breakage (e.g. a bad require) on pull requests, before anything deploys
       - run: npm run build
 
+  # Real-browser checks: everyday playback (next/previous/pitch/speed) and a memory budget. Needs Node 22 for the
+  # built-in WebSocket and uses the Chrome that ships on the runner.
+  browser-test:
+    name: Browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - run: npm run test:browser
+
+      - run: npm run test:memory
+
   build-and-deploy:
     needs: test
     if: github.event_name == 'push'
